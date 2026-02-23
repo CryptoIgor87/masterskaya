@@ -305,11 +305,11 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
     """Find bonus by promo code and reduce its amount. Returns result dict."""
     async with _conn() as conn:
         row = await conn.fetchrow(
-            "SELECT id, amount, client_id FROM bonuses WHERE promo_code = $1 AND is_claimed = 1",
+            "SELECT id, amount, client_id FROM bonuses WHERE promo_code = $1",
             promo_code,
         )
         if not row:
-            return {"found": False, "message": "Промокод не найден или не активирован"}
+            return {"found": False, "message": "Промокод не найден"}
         bonus_id = row["id"]
         current = row["amount"]
         deduct = min(amount, current)

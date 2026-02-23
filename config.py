@@ -23,3 +23,7 @@ WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://example.com")
 
 DEFAULT_BONUS_AMOUNT = int(os.environ.get("DEFAULT_BONUS_AMOUNT", "100"))
 DEFAULT_BONUS_PROMO = os.environ.get("DEFAULT_BONUS_PROMO", "WELCOME")
+
+ADMIN_LOGIN = os.environ.get("ADMIN_LOGIN", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "masteradmin2026")
+SECRET_KEY = os.environ.get("SECRET_KEY", "mksya-s3cret-k3y-2026-xQ9p")
