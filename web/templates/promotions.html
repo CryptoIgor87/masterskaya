@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Акции{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-tag"></i> Акции</h2>
+    <a href="{{ B }}/admin/promotions/add" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Добавить акцию
+    </a>
+</div>
+
+{% if promotions %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Фото</th>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Период</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for promo in promotions %}
+            <tr>
+                <td>
+                    {% if promo.photo_path %}
+                    <img src="{{ B }}/uploads/{{ promo.photo_path }}" class="promo-thumb" alt="">
+                    {% else %}
+                    <span class="text-muted">Нет фото</span>
+                    {% endif %}
+                </td>
+                <td><strong>{{ promo.title }}</strong></td>
+                <td>{{ promo.description[:80] }}{% if promo.description|length > 80 %}...{% endif %}</td>
+                <td>{{ promo.start_date }} — {{ promo.end_date }}</td>
+                <td>
+                    {% if promo.is_active %}
+                    <span class="badge bg-success">Действует</span>
+                    {% else %}
+                    <span class="badge bg-danger">Не действует</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="{{ B }}/admin/promotions/{{ promo.id }}/toggle" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Переключить статус">
+                            <i class="bi bi-toggle-on"></i>
+                        </button>
+                    </form>
+                    <form action="{{ B }}/admin/promotions/{{ promo.id }}/delete" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger btn-delete" title="Удалить">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">Акций пока нет. Добавьте первую!</div>
+{% endif %}
+{% endblock %}

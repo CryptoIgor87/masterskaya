@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Рассылки{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-megaphone"></i> Рассылки</h2>
+    <a href="{{ B }}/admin/mailings/create" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Создать рассылку
+    </a>
+</div>
+
+{% if mailings %}
+{% for m in mailings %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="d-flex gap-3 flex-grow-1">
+                {% if m.photo_path %}
+                <img src="{{ B }}/uploads/{{ m.photo_path }}" class="promo-thumb" alt="">
+                {% endif %}
+                <div>
+                    <p class="mb-1">{{ m.text[:150] }}{% if m.text|length > 150 %}...{% endif %}</p>
+                    {% if m.button_text %}
+                    <small class="text-muted"><i class="bi bi-link-45deg"></i> {{ m.button_text }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="text-end text-nowrap ms-3">
+                {% if m.status == 'draft' %}
+                <span class="badge bg-warning text-dark mb-2 d-block">Черновик</span>
+                {% else %}
+                <span class="badge bg-success mb-2 d-block">Отправлено</span>
+                {% endif %}
+                <small class="text-muted d-block">{{ m.created_at }}</small>
+            </div>
+        </div>
+
+        {% if m.status == 'sent' %}
+        <div class="mt-2 d-flex gap-3">
+            <small><i class="bi bi-people"></i> Всего: <strong>{{ m.sent_total }}</strong></small>
+            <small class="text-success"><i class="bi bi-check-circle"></i> Доставлено: <strong>{{ m.sent_ok }}</strong></small>
+            <small class="text-danger"><i class="bi bi-x-circle"></i> Не доставлено: <strong>{{ m.sent_fail }}</strong></small>
+            {% if m.sent_at %}<small class="text-muted"><i class="bi bi-clock"></i> {{ m.sent_at }}</small>{% endif %}
+        </div>
+        {% endif %}
+
+        <div class="mt-2 d-flex gap-2">
+            {% if m.status == 'draft' %}
+            <a href="{{ B }}/admin/mailings/{{ m.id }}/edit" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+            <form action="{{ B }}/admin/mailings/{{ m.id }}/send" method="post" class="d-inline" onsubmit="return confirm('Отправить рассылку всем клиентам?')">
+                <button type="submit" class="btn btn-sm btn-success">
+                    <i class="bi bi-send"></i> Отправить
+                </button>
+            </form>
+            {% endif %}
+            <form action="{{ B }}/admin/mailings/{{ m.id }}/delete" method="post" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger btn-delete">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-info">Рассылок пока нет. Создайте первую!</div>
+{% endif %}
+{% endblock %}

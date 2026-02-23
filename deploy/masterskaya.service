@@ -1,0 +1,15 @@
+[Unit]
+Description=Masterskaya Bot + Admin Panel
+After=network.target
+
+[Service]
+Type=simple
+User=oracle
+WorkingDirectory=/home/oracle/masterskaya
+EnvironmentFile=/home/oracle/masterskaya/.env
+ExecStart=/home/oracle/masterskaya/venv/bin/python main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

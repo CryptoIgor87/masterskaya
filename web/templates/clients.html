@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Клиенты{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-people"></i> Клиенты</h2>
+
+<div class="mb-3">
+    <input type="text" id="tableSearch" class="form-control" placeholder="Поиск..." style="max-width: 300px;">
+</div>
+
+{% if clients %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle filterable-table">
+        <thead class="table-light">
+            <tr>
+                <th>Telegram ID</th>
+                <th>Имя</th>
+                <th>Фамилия</th>
+                <th>Username</th>
+                <th>Язык</th>
+                <th>Телефон</th>
+                <th>Бонусов</th>
+                <th>Сообщений</th>
+                <th>Дата регистрации</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td><code>{{ client.telegram_id }}</code></td>
+                <td>{{ client.first_name or '—' }}</td>
+                <td>{{ client.last_name or '—' }}</td>
+                <td>{% if client.username %}@{{ client.username }}{% else %}—{% endif %}</td>
+                <td>{{ client.language_code or '—' }}</td>
+                <td>{{ client.phone or '—' }}</td>
+                <td><span class="badge bg-primary">{{ client.bonus_total }}</span></td>
+                <td><span class="badge bg-secondary">{{ client.msg_count }}</span></td>
+                <td>{{ client.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p class="text-muted">Всего клиентов: {{ clients|length }}</p>
+{% else %}
+<div class="alert alert-info">Клиентов пока нет. Они появятся после первого запуска бота.</div>
+{% endif %}
+{% endblock %}

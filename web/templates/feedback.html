@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Обратная связь{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-chat-dots"></i> Обратная связь</h2>
+
+<!-- Filter buttons -->
+<div class="btn-group mb-4">
+    <a href="{{ B }}/admin/feedback?filter=all" class="btn btn-outline-secondary {% if current_filter == 'all' %}active{% endif %}">
+        Все
+    </a>
+    <a href="{{ B }}/admin/feedback?filter=unreplied" class="btn btn-outline-danger {% if current_filter == 'unreplied' %}active{% endif %}">
+        <i class="bi bi-clock"></i> Неотвеченные
+    </a>
+    <a href="{{ B }}/admin/feedback?filter=replied" class="btn btn-outline-success {% if current_filter == 'replied' %}active{% endif %}">
+        <i class="bi bi-check-lg"></i> Отвеченные
+    </a>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="card mb-3 feedback-card {% if msg.is_replied %}replied{% endif %}">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <div>
+                <strong>{{ msg.first_name or '' }} {{ msg.last_name or '' }}</strong>
+                {% if msg.username %}<span class="text-muted">@{{ msg.username }}</span>{% endif %}
+            </div>
+            <div>
+                <small class="text-muted me-2">{{ msg.created_at }}</small>
+                <form action="{{ B }}/admin/feedback/{{ msg.id }}/delete" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger btn-delete" title="Удалить">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <p class="mt-2 mb-2">{{ msg.message_text }}</p>
+
+        {% if msg.is_replied %}
+        <div class="bg-light rounded p-2 mt-2">
+            <small class="text-muted">Ваш ответ ({{ msg.replied_at }}):</small>
+            <p class="mb-0">{{ msg.admin_reply }}</p>
+        </div>
+        {% else %}
+        <form action="{{ B }}/admin/feedback/{{ msg.id }}/reply" method="post" class="mt-2">
+            <div class="input-group">
+                <input type="text" name="reply_text" class="form-control" placeholder="Написать ответ..." required>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send"></i> Ответить
+                </button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-info">
+    {% if current_filter == 'unreplied' %}
+    Нет неотвеченных сообщений.
+    {% elif current_filter == 'replied' %}
+    Нет отвеченных сообщений.
+    {% else %}
+    Сообщений пока нет.
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

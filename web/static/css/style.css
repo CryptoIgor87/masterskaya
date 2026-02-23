@@ -1,0 +1,51 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.sidebar .nav-link {
+    color: #333;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #e9ecef;
+}
+
+.sidebar .nav-link.fw-bold {
+    background-color: #e7f1ff;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+    font-weight: 600;
+    border-top: none;
+}
+
+.badge-active {
+    background-color: #198754;
+}
+
+.badge-inactive {
+    background-color: #dc3545;
+}
+
+.promo-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.feedback-card {
+    border-left: 4px solid #0d6efd;
+}
+
+.feedback-card.replied {
+    border-left-color: #198754;
+}

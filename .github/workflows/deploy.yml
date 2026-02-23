@@ -1,0 +1,21 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/oracle/masterskaya
+            sudo -u oracle git pull origin main
+            sudo -u oracle /home/oracle/masterskaya/venv/bin/pip install -r requirements.txt --quiet
+            systemctl restart masterskaya

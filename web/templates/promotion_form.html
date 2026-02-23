@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Добавить акцию{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ B }}/admin/promotions" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Назад
+    </a>
+</div>
+
+<h2 class="mb-4">Добавить акцию</h2>
+
+<div class="card p-4" style="max-width: 600px;">
+    <form action="{{ B }}/admin/promotions/add" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Название *</label>
+            <input type="text" name="title" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Описание *</label>
+            <textarea name="description" class="form-control" rows="4" required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Фото</label>
+            <input type="file" name="photo" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp">
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                <label class="form-label">Дата начала *</label>
+                <input type="date" name="start_date" class="form-control" required>
+            </div>
+            <div class="col">
+                <label class="form-label">Дата окончания *</label>
+                <input type="date" name="end_date" class="form-control" required>
+            </div>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" name="is_active" value="1" class="form-check-input" id="isActive" checked>
+            <label class="form-check-label" for="isActive">Действует</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> Сохранить
+        </button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{% if mailing %}Редактировать{% else %}Создать{% endif %} рассылку{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ B }}/admin/mailings" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Назад
+    </a>
+</div>
+
+<h2 class="mb-4">{% if mailing %}Редактировать{% else %}Создать{% endif %} рассылку</h2>
+
+<div class="card p-4" style="max-width: 600px;">
+    <form action="{{ B }}/admin/mailings/{% if mailing %}{{ mailing.id }}/edit{% else %}create{% endif %}" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Текст рассылки *</label>
+            <textarea name="text" class="form-control" rows="5" required placeholder="Поддерживается HTML: &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;">{{ mailing.text if mailing else '' }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Фото</label>
+            <input type="file" name="photo" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp">
+            {% if mailing and mailing.photo_path %}
+            <div class="mt-2">
+                <small class="text-muted">Текущее фото:</small><br>
+                <img src="{{ B }}/uploads/{{ mailing.photo_path }}" style="max-height: 100px; border-radius: 8px;" alt="">
+            </div>
+            {% endif %}
+        </div>
+
+        <hr>
+        <p class="text-muted mb-2"><small>Кнопка со ссылкой (необязательно)</small></p>
+
+        <div class="row mb-3">
+            <div class="col">
+                <label class="form-label">Текст кнопки</label>
+                <input type="text" name="button_text" class="form-control" placeholder="Перейти на сайт" value="{{ mailing.button_text if mailing and mailing.button_text else '' }}">
+            </div>
+            <div class="col">
+                <label class="form-label">URL кнопки</label>
+                <input type="url" name="button_url" class="form-control" placeholder="https://example.com" value="{{ mailing.button_url if mailing and mailing.button_url else '' }}">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> {% if mailing %}Сохранить{% else %}Создать черновик{% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}
