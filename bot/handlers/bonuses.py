@@ -37,8 +37,10 @@ async def show_bonuses(callback: CallbackQuery):
             reply_markup=bonus_keyboard()
         )
     elif last_code:
+        claimed_total = await db.get_client_claimed_bonus_total(client["id"])
         await callback.message.answer(
-            f"\u2705 Ваши бонусы активны!\n\n"
+            f"\u2705 Ваши бонусы активны!\n"
+            f"У вас <b>{claimed_total}</b> бонусов.\n\n"
             f"Ваш промокод: <b>{last_code}</b>",
             parse_mode="HTML",
             reply_markup=back_to_menu_keyboard()
@@ -60,17 +62,21 @@ async def claim_bonuses(callback: CallbackQuery):
     promo_code = await db.claim_bonuses(client["id"])
 
     if promo_code:
+        claimed_total = await db.get_client_claimed_bonus_total(client["id"])
         await callback.message.answer(
-            f"\U0001f389 Ваш промокод на бонусы: <b>{promo_code}</b>\n\n"
-            "Покажите его при покупке!",
+            f"\U0001f389 Ваш промокод на бонусы: <b>{promo_code}</b>\n"
+            f"У вас <b>{claimed_total}</b> бонусов.\n\n"
+            "Покажите промокод при покупке!",
             parse_mode="HTML",
             reply_markup=back_to_menu_keyboard()
         )
     else:
         last_code = await db.get_last_claimed_code(client["id"])
         if last_code:
+            claimed_total = await db.get_client_claimed_bonus_total(client["id"])
             await callback.message.answer(
-                f"\u2705 Ваши бонусы уже активны!\n\n"
+                f"\u2705 Ваши бонусы уже активны!\n"
+                f"У вас <b>{claimed_total}</b> бонусов.\n\n"
                 f"Ваш промокод: <b>{last_code}</b>",
                 parse_mode="HTML",
                 reply_markup=back_to_menu_keyboard()

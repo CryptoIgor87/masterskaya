@@ -1,6 +1,17 @@
 import asyncpg
+import random
 from contextlib import asynccontextmanager
 from config import DATABASE_URL, DB_SCHEMA, DEFAULT_BONUS_AMOUNT, DEFAULT_BONUS_PROMO
+
+POSITIVE_WORDS = [
+    "SUNSHINE", "RAINBOW", "BLOSSOM", "HARMONY", "SPARKLE", "DREAM", "AURORA",
+    "BREEZE", "CRYSTAL", "DELIGHT", "EMBER", "FORTUNE", "GENTLE", "HAVEN",
+    "INSPIRE", "JOYFUL", "KINDNESS", "LIBERTY", "MIRACLE", "NOBLE", "OASIS",
+    "PEACFUL", "RADIANT", "SERENE", "TRIUMPH", "UNITY", "VALOR", "WONDER",
+    "BLISS", "CHARM", "DAWN", "FAITH", "GRACE", "HONEY", "IVORY", "JEWEL",
+    "LOTUS", "MELODY", "NECTAR", "PEARL", "SPIRIT", "STAR", "TENDER",
+    "VELVET", "WISDOM", "BLOOM", "CORAL", "GLORY", "SILVER", "GOLDEN",
+]
 
 pool: asyncpg.Pool | None = None
 
@@ -168,10 +179,10 @@ async def ensure_client_registered(telegram_id: int, first_name: str = None,
     enabled = await get_setting("default_bonus_enabled")
     if enabled == "1":
         amount = int(await get_setting("default_bonus_amount") or "0")
-        promo = await get_setting("default_bonus_promo") or "WELCOME"
         if amount > 0:
             client = await get_client_by_telegram_id(telegram_id)
             if client:
+                promo = await generate_unique_promo()
                 await add_bonus(client["id"], amount, promo)
 
     return True
@@ -246,6 +257,60 @@ async def get_promotion(promotion_id: int) -> dict | None:
 
 
 # === Bonuses ===
+
+async def generate_unique_promo() -> str:
+    """Generate a unique promo code from positive English words + 3 digits."""
+    async with _conn() as conn:
+        for _ in range(100):
+            word = random.choice(POSITIVE_WORDS)
+            digits = random.randint(100, 999)
+            code = f"{word}-{digits}"
+            existing = await conn.fetchrow(
+                "SELECT id FROM bonuses WHERE promo_code = $1", code,
+            )
+            if not existing:
+                return code
+    return f"GIFT-{random.randint(100000, 999999)}"
+
+
+async def get_client_claimed_bonus_total(client_id: int) -> int:
+    async with _conn() as conn:
+        row = await conn.fetchrow(
+            "SELECT COALESCE(SUM(amount), 0) as total FROM bonuses WHERE client_id = $1 AND is_claimed = 1",
+            client_id,
+        )
+        return row["total"]
+
+
+async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
+    """Find bonus by promo code and reduce its amount. Returns result dict."""
+    async with _conn() as conn:
+        row = await conn.fetchrow(
+            "SELECT id, amount, client_id FROM bonuses WHERE promo_code = $1 AND is_claimed = 1",
+            promo_code,
+        )
+        if not row:
+            return {"found": False, "message": "Промокод не найден или не активирован"}
+        bonus_id = row["id"]
+        current = row["amount"]
+        deduct = min(amount, current)
+        new_amount = current - deduct
+        await conn.execute(
+            "UPDATE bonuses SET amount = $1 WHERE id = $2",
+            new_amount, bonus_id,
+        )
+        client = await conn.fetchrow("SELECT first_name, username FROM clients WHERE id = $1", row["client_id"])
+        client_name = (client["first_name"] or "") if client else ""
+        if client and client["username"]:
+            client_name += f" (@{client['username']})"
+        return {
+            "found": True,
+            "deducted": deduct,
+            "remaining": new_amount,
+            "client_name": client_name.strip(),
+            "message": f"Списано {deduct} бонусов. Остаток: {new_amount}. Клиент: {client_name.strip()}",
+        }
+
 
 async def get_bonus_stats() -> dict:
     async with _conn() as conn:

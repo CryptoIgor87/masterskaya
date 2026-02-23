@@ -4,14 +4,16 @@
 {% block content %}
 <h2 class="mb-4"><i class="bi bi-gift"></i> Бонусы</h2>
 
+<!-- Flash message -->
+{% if flash_msg %}
+<div class="alert alert-{{ flash_type }} alert-dismissible fade show mb-4" role="alert">
+    {{ flash_msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
 <!-- Stats -->
 <div class="row mb-4 g-3">
-    <div class="col-auto">
-        <div class="card text-center px-4 py-3">
-            <div class="fs-3 fw-bold text-primary">{{ stats.total_issued }}</div>
-            <small class="text-muted">Выдано бонусов</small>
-        </div>
-    </div>
     <div class="col-auto">
         <div class="card text-center px-4 py-3">
             <div class="fs-3 fw-bold text-info">{{ stats.clients_with_bonuses }}</div>
@@ -45,10 +47,6 @@
                     <label class="form-label">Количество</label>
                     <input type="number" name="default_amount" class="form-control" min="0" value="{{ default_amount }}" required style="width: 120px;">
                 </div>
-                <div class="col-auto">
-                    <label class="form-label">Промокод</label>
-                    <input type="text" name="default_promo" class="form-control" value="{{ default_promo }}" required style="width: 200px;">
-                </div>
                 <div class="col-auto pt-2">
                     <div class="form-check form-switch">
                         <input type="checkbox" name="default_enabled" value="1" class="form-check-input" id="defaultEnabled" {% if default_enabled %}checked{% endif %}>
@@ -61,7 +59,7 @@
                     </button>
                 </div>
             </form>
-            <small class="text-muted mt-2 d-block">Каждый новый клиент автоматически получит эти бонусы при первом запуске бота</small>
+            <small class="text-muted mt-2 d-block">Каждый новый клиент автоматически получит бонусы с уникальным промокодом при первом запуске бота</small>
         </div>
     </div>
 </div>
@@ -128,6 +126,34 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Redeem bonuses (collapsed) -->
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#redeemBonuses">
+        <h5 class="mb-0"><i class="bi bi-dash-circle"></i> Списать бонусы</h5>
+        <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="collapse" id="redeemBonuses">
+        <div class="card-body">
+            <form action="{{ B }}/admin/bonuses/redeem" method="post" class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label">Промокод</label>
+                    <input type="text" name="promo_code" class="form-control" placeholder="SUNSHINE-482" required style="width: 200px;">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label">Сумма списания</label>
+                    <input type="number" name="amount" class="form-control" min="1" required style="width: 150px;">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-dash-lg"></i> Списать
+                    </button>
+                </div>
+            </form>
+            <small class="text-muted mt-2 d-block">Введите промокод клиента, чтобы найти и списать бонусы</small>
         </div>
     </div>
 </div>
