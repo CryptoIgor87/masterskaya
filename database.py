@@ -349,6 +349,15 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
         }
 
 
+async def get_client_promo_code(client_id: int) -> str | None:
+    async with _conn() as conn:
+        row = await conn.fetchrow(
+            "SELECT promo_code FROM bonuses WHERE client_id = $1 ORDER BY created_at DESC LIMIT 1",
+            client_id,
+        )
+        return row["promo_code"] if row else None
+
+
 async def get_client_redemptions(client_id: int) -> list[dict]:
     async with _conn() as conn:
         rows = await conn.fetch("""
