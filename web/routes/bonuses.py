@@ -21,6 +21,7 @@ async def list_bonuses(request: Request):
     bonuses = await db.get_all_bonuses_with_clients()
     clients = await db.get_all_clients()
     stats = await db.get_bonus_stats()
+    redemptions = await db.get_redemption_history()
     default_enabled = await db.get_setting("default_bonus_enabled") == "1"
     default_amount = await db.get_setting("default_bonus_amount") or "0"
     flash_msg = request.query_params.get("msg", "")
@@ -30,6 +31,7 @@ async def list_bonuses(request: Request):
         "bonuses": bonuses,
         "clients": clients,
         "stats": stats,
+        "redemptions": redemptions,
         "active_page": "bonuses",
         "default_enabled": default_enabled,
         "default_amount": default_amount,

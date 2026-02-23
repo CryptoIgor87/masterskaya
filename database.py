@@ -119,6 +119,14 @@ async def _create_tables(conn):
         )
     """)
     await conn.execute("""
+        CREATE TABLE IF NOT EXISTS bonus_redemptions (
+            id              SERIAL PRIMARY KEY,
+            bonus_id        INTEGER NOT NULL REFERENCES bonuses(id) ON DELETE CASCADE,
+            amount          INTEGER NOT NULL,
+            created_at      TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    await conn.execute("""
         CREATE TABLE IF NOT EXISTS feedback_messages (
             id              SERIAL PRIMARY KEY,
             client_id       INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
@@ -318,6 +326,11 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
             "UPDATE bonuses SET amount = $1 WHERE id = $2",
             new_amount, bonus_id,
         )
+        # Log redemption history
+        await conn.execute(
+            "INSERT INTO bonus_redemptions (bonus_id, amount) VALUES ($1, $2)",
+            bonus_id, deduct,
+        )
         # Track total redeemed
         await conn.execute(
             "INSERT INTO settings (key, value) VALUES ('total_redeemed', $1) ON CONFLICT (key) DO UPDATE SET value = (COALESCE(settings.value::int, 0) + $1::int)::text",
@@ -334,6 +347,20 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
             "client_name": client_name.strip(),
             "message": f"Списано {deduct} бонусов. Остаток: {new_amount}. Клиент: {client_name.strip()}",
         }
+
+
+async def get_redemption_history() -> list[dict]:
+    async with _conn() as conn:
+        rows = await conn.fetch("""
+            SELECT r.amount, r.created_at,
+                   b.promo_code,
+                   c.first_name, c.last_name, c.username
+            FROM bonus_redemptions r
+            JOIN bonuses b ON r.bonus_id = b.id
+            JOIN clients c ON b.client_id = c.id
+            ORDER BY r.created_at DESC
+        """)
+        return [dict(r) for r in rows]
 
 
 async def get_bonus_stats() -> dict:

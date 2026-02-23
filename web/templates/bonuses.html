@@ -254,4 +254,36 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
 {% else %}
 <div class="alert alert-info">Бонусов пока нет.</div>
 {% endif %}
+
+<!-- Redemption history -->
+<h4 class="mt-5 mb-3"><i class="bi bi-clock-history"></i> История списаний</h4>
+{% if redemptions %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Клиент</th>
+                <th>Промокод</th>
+                <th>Списано</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in redemptions %}
+            <tr>
+                <td>
+                    {{ r.first_name or '' }} {{ r.last_name or '' }}
+                    {% if r.username %}<br><small class="text-muted">@{{ r.username }}</small>{% endif %}
+                </td>
+                <td><code>{{ r.promo_code }}</code></td>
+                <td><span class="text-danger fw-bold">-{{ r.amount }}</span></td>
+                <td>{{ r.created_at|tomsk }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-secondary">Списаний пока не было.</div>
+{% endif %}
 {% endblock %}
