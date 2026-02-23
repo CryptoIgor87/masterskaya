@@ -299,6 +299,11 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
             "UPDATE bonuses SET amount = $1 WHERE id = $2",
             new_amount, bonus_id,
         )
+        # Track total redeemed
+        await conn.execute(
+            "INSERT INTO settings (key, value) VALUES ('total_redeemed', $1::text) ON CONFLICT (key) DO UPDATE SET value = (COALESCE(settings.value::int, 0) + $1)::text",
+            deduct,
+        )
         client = await conn.fetchrow("SELECT first_name, username FROM clients WHERE id = $1", row["client_id"])
         client_name = (client["first_name"] or "") if client else ""
         if client and client["username"]:
@@ -323,7 +328,10 @@ async def get_bonus_stats() -> dict:
                 COUNT(DISTINCT CASE WHEN is_claimed = 1 THEN client_id END) as clients_claimed
             FROM bonuses
         """)
-        return dict(row)
+        stats = dict(row)
+        redeemed = await conn.fetchrow("SELECT value FROM settings WHERE key = 'total_redeemed'")
+        stats["total_redeemed"] = int(redeemed["value"]) if redeemed else 0
+        return stats
 
 
 async def get_client_bonuses(client_id: int) -> list[dict]:
