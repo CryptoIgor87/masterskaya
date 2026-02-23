@@ -62,6 +62,17 @@ async def show_bonuses(callback: CallbackQuery):
     )
 
 
+@router.callback_query(SectionCallback.filter(F.name == "bonus_terms"))
+async def show_bonus_terms(callback: CallbackQuery):
+    await callback.answer()
+    await callback.message.answer(
+        "\U0001f4d6 <b>Условия бонусной программы</b>\n\n"
+        "Привет! Условия будут тут позже.",
+        parse_mode="HTML",
+        reply_markup=back_to_menu_keyboard()
+    )
+
+
 @router.callback_query(BonusCallback.filter(F.action == "claim"))
 async def claim_bonuses(callback: CallbackQuery):
     """Backward compat for old 'claim' buttons — just show bonuses."""
