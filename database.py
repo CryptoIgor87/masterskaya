@@ -7,10 +7,20 @@ POSITIVE_WORDS = [
     "SUNSHINE", "RAINBOW", "BLOSSOM", "HARMONY", "SPARKLE", "DREAM", "AURORA",
     "BREEZE", "CRYSTAL", "DELIGHT", "EMBER", "FORTUNE", "GENTLE", "HAVEN",
     "INSPIRE", "JOYFUL", "KINDNESS", "LIBERTY", "MIRACLE", "NOBLE", "OASIS",
-    "PEACFUL", "RADIANT", "SERENE", "TRIUMPH", "UNITY", "VALOR", "WONDER",
+    "PEACEFUL", "RADIANT", "SERENE", "TRIUMPH", "UNITY", "VALOR", "WONDER",
     "BLISS", "CHARM", "DAWN", "FAITH", "GRACE", "HONEY", "IVORY", "JEWEL",
     "LOTUS", "MELODY", "NECTAR", "PEARL", "SPIRIT", "STAR", "TENDER",
     "VELVET", "WISDOM", "BLOOM", "CORAL", "GLORY", "SILVER", "GOLDEN",
+    "ANGEL", "BRIGHT", "CANDY", "DIVINE", "ETERNAL", "FEATHER", "GARDEN",
+    "HAPPY", "ISLAND", "JASMINE", "KARMA", "LIGHT", "MAGIC", "NATURE",
+    "OCEAN", "PARADISE", "QUEEN", "ROYAL", "SILK", "TREASURE", "UNIQUE",
+    "VIVID", "WARMTH", "ZENITH", "AMBER", "BELOVED", "COSMIC", "DAZZLE",
+    "ELEGANCE", "FLUTTER", "GLOW", "HORIZON", "INFINITY", "JUBILEE",
+    "KINDRED", "LAVENDER", "MOONLIGHT", "NIRVANA", "ORCHID", "PASSION",
+    "QUARTZ", "REVERIE", "SAPPHIRE", "TWILIGHT", "UTOPIA", "VIBRANT",
+    "WHISPER", "XANADU", "YESTERDAY", "ZEPHYR", "BREEZY", "CHERISH",
+    "DAHLIA", "ENCHANT", "FIREFLY", "GRATITUDE", "HALCYON", "IRIDESCENT",
+    "JOURNEY", "KISMET", "LULLABY", "MAJESTIC", "NOSTALGIC", "OPULENT",
 ]
 
 pool: asyncpg.Pool | None = None
@@ -259,18 +269,27 @@ async def get_promotion(promotion_id: int) -> dict | None:
 # === Bonuses ===
 
 async def generate_unique_promo() -> str:
-    """Generate a unique promo code from positive English words + 3 digits."""
+    """Generate a unique promo code from positive English words."""
     async with _conn() as conn:
+        # Shuffle to avoid bias, try each word
+        words = POSITIVE_WORDS.copy()
+        random.shuffle(words)
+        for word in words:
+            existing = await conn.fetchrow(
+                "SELECT id FROM bonuses WHERE promo_code = $1", word,
+            )
+            if not existing:
+                return word
+        # Fallback if all words used — add digits
         for _ in range(100):
             word = random.choice(POSITIVE_WORDS)
-            digits = random.randint(100, 999)
-            code = f"{word}-{digits}"
+            code = f"{word}{random.randint(10, 99)}"
             existing = await conn.fetchrow(
                 "SELECT id FROM bonuses WHERE promo_code = $1", code,
             )
             if not existing:
                 return code
-    return f"GIFT-{random.randint(100000, 999999)}"
+    return f"GIFT{random.randint(1000, 9999)}"
 
 
 async def get_client_claimed_bonus_total(client_id: int) -> int:
