@@ -66,7 +66,7 @@ def create_app(bot=None) -> FastAPI:
 
     # --- Admin routes ---
 
-    from web.routes import promotions, bonuses, clients, feedback, mailings
+    from web.routes import promotions, bonuses, clients, feedback, mailings, settings
 
     parent = APIRouter(prefix=BASE_PATH)
     parent.include_router(promotions.router)
@@ -74,6 +74,7 @@ def create_app(bot=None) -> FastAPI:
     parent.include_router(clients.router)
     parent.include_router(feedback.router)
     parent.include_router(mailings.router)
+    parent.include_router(settings.router)
     app.include_router(parent)
 
     # --- Root redirect ---

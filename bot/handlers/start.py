@@ -4,16 +4,19 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from bot.keyboards.main_menu import main_menu_keyboard
 from bot.callbacks.callback_data import NavigationCallback
+import database as db
 
 router = Router()
+
+DEFAULT_WELCOME = "Добро пожаловать в наш магазин! \U0001f44b"
 
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
+    welcome = await db.get_setting("welcome_text") or DEFAULT_WELCOME
     await message.answer(
-        "Добро пожаловать в наш магазин! \U0001f44b\n\n"
-        "Выберите интересующий раздел:",
+        f"{welcome}\n\nВыберите интересующий раздел:",
         reply_markup=main_menu_keyboard()
     )
 

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Настройки{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-gear"></i> Настройки</h2>
+
+{% if flash_msg %}
+<div class="alert alert-{{ flash_type }} alert-dismissible fade show mb-4" role="alert">
+    {{ flash_msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Welcome text -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Приветственный текст</h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ B }}/admin/settings/welcome-text" method="post">
+            <div class="mb-3">
+                <label class="form-label">Текст при запуске бота (/start)</label>
+                <textarea name="welcome_text" class="form-control" rows="4" placeholder="Добро пожаловать в наш магазин!">{{ welcome_text }}</textarea>
+            </div>
+            <small class="text-muted d-block mb-3">Если оставить пустым, будет использоваться текст по умолчанию</small>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Сохранить
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Bonus terms -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-book"></i> Условия бонусной программы</h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ B }}/admin/settings/bonus-terms" method="post">
+            <div class="mb-3">
+                <label class="form-label">Текст при нажатии кнопки "Условия бонусной программы"</label>
+                <textarea name="bonus_terms" class="form-control" rows="6" placeholder="Условия бонусной программы...">{{ bonus_terms }}</textarea>
+            </div>
+            <small class="text-muted d-block mb-3">Если оставить пустым, будет показано "Условия будут тут позже"</small>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Сохранить
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

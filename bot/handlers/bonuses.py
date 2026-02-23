@@ -65,9 +65,10 @@ async def show_bonuses(callback: CallbackQuery):
 @router.callback_query(SectionCallback.filter(F.name == "bonus_terms"))
 async def show_bonus_terms(callback: CallbackQuery):
     await callback.answer()
+    terms = await db.get_setting("bonus_terms")
+    text = terms if terms else "Условия будут тут позже."
     await callback.message.answer(
-        "\U0001f4d6 <b>Условия бонусной программы</b>\n\n"
-        "Привет! Условия будут тут позже.",
+        f"\U0001f4d6 <b>Условия бонусной программы</b>\n\n{text}",
         parse_mode="HTML",
         reply_markup=back_to_menu_keyboard()
     )
