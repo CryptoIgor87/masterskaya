@@ -31,7 +31,7 @@
                 {% else %}
                 <span class="badge bg-success mb-2 d-block">Отправлено</span>
                 {% endif %}
-                <small class="text-muted d-block">{{ m.created_at }}</small>
+                <small class="text-muted d-block">{{ m.created_at|tomsk }}</small>
             </div>
         </div>
 
@@ -40,7 +40,7 @@
             <small><i class="bi bi-people"></i> Всего: <strong>{{ m.sent_total }}</strong></small>
             <small class="text-success"><i class="bi bi-check-circle"></i> Доставлено: <strong>{{ m.sent_ok }}</strong></small>
             <small class="text-danger"><i class="bi bi-x-circle"></i> Не доставлено: <strong>{{ m.sent_fail }}</strong></small>
-            {% if m.sent_at %}<small class="text-muted"><i class="bi bi-clock"></i> {{ m.sent_at }}</small>{% endif %}
+            {% if m.sent_at %}<small class="text-muted"><i class="bi bi-clock"></i> {{ m.sent_at|tomsk }}</small>{% endif %}
         </div>
         {% endif %}
 

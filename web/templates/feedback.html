@@ -27,7 +27,7 @@
                 {% if msg.username %}<span class="text-muted">@{{ msg.username }}</span>{% endif %}
             </div>
             <div>
-                <small class="text-muted me-2">{{ msg.created_at }}</small>
+                <small class="text-muted me-2">{{ msg.created_at|tomsk }}</small>
                 <form action="{{ B }}/admin/feedback/{{ msg.id }}/delete" method="post" class="d-inline">
                     <button type="submit" class="btn btn-sm btn-outline-danger btn-delete" title="Удалить">
                         <i class="bi bi-trash"></i>
@@ -40,7 +40,7 @@
 
         {% if msg.is_replied %}
         <div class="bg-light rounded p-2 mt-2">
-            <small class="text-muted">Ваш ответ ({{ msg.replied_at }}):</small>
+            <small class="text-muted">Ваш ответ ({{ msg.replied_at|tomsk }}):</small>
             <p class="mb-0">{{ msg.admin_reply }}</p>
         </div>
         {% else %}

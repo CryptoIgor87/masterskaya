@@ -207,12 +207,12 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
                 <td>
                     {% if bonus.is_claimed %}
                     <span class="badge bg-success">Забрано</span>
-                    <br><small class="text-muted">{{ bonus.claimed_at }}</small>
+                    <br><small class="text-muted">{{ bonus.claimed_at|tomsk }}</small>
                     {% else %}
                     <span class="badge bg-warning text-dark">Не забрано</span>
                     {% endif %}
                 </td>
-                <td>{{ bonus.created_at }}</td>
+                <td>{{ bonus.created_at|tomsk }}</td>
                 <td>
                     <!-- Change code -->
                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#codeModal{{ bonus.id }}" title="Изменить промокод">

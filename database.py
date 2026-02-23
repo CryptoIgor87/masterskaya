@@ -320,8 +320,8 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
         )
         # Track total redeemed
         await conn.execute(
-            "INSERT INTO settings (key, value) VALUES ('total_redeemed', $1::text) ON CONFLICT (key) DO UPDATE SET value = (COALESCE(settings.value::int, 0) + $1)::text",
-            deduct,
+            "INSERT INTO settings (key, value) VALUES ('total_redeemed', $1) ON CONFLICT (key) DO UPDATE SET value = (COALESCE(settings.value::int, 0) + $1::int)::text",
+            str(deduct),
         )
         client = await conn.fetchrow("SELECT first_name, username FROM clients WHERE id = $1", row["client_id"])
         client_name = (client["first_name"] or "") if client else ""

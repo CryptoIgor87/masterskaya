@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, APIRouter
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -7,8 +8,24 @@ from config import UPLOADS_DIR, BASE_PATH
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+TOMSK_TZ = timezone(timedelta(hours=7))
+
+
+def tomsk_time(value):
+    """Convert UTC datetime to Tomsk time (UTC+7) and format."""
+    if not value:
+        return ""
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        local = value.astimezone(TOMSK_TZ)
+        return local.strftime("%d.%m.%Y %H:%M")
+    return str(value)
+
+
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 templates.env.globals["B"] = BASE_PATH
+templates.env.filters["tomsk"] = tomsk_time
 
 
 def create_app(bot=None) -> FastAPI:

@@ -1,5 +1,6 @@
 import string
 import random
+from urllib.parse import quote
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from web.app import templates
@@ -82,14 +83,14 @@ async def redeem_bonus(
     amount: int = Form(...),
 ):
     result = await db.redeem_bonus_by_code(promo_code.strip(), amount)
-    # Store flash message in query param for simplicity
+    msg = quote(result["message"])
     if result["found"]:
         return RedirectResponse(
-            f"{BASE_PATH}/admin/bonuses?msg={result['message']}&type=success",
+            f"{BASE_PATH}/admin/bonuses?msg={msg}&type=success",
             status_code=303,
         )
     return RedirectResponse(
-        f"{BASE_PATH}/admin/bonuses?msg={result['message']}&type=danger",
+        f"{BASE_PATH}/admin/bonuses?msg={msg}&type=danger",
         status_code=303,
     )
 
