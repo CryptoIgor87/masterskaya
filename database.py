@@ -349,6 +349,18 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
         }
 
 
+async def get_client_redemptions(client_id: int) -> list[dict]:
+    async with _conn() as conn:
+        rows = await conn.fetch("""
+            SELECT r.amount, r.created_at
+            FROM bonus_redemptions r
+            JOIN bonuses b ON r.bonus_id = b.id
+            WHERE b.client_id = $1
+            ORDER BY r.created_at DESC
+        """, client_id)
+        return [dict(r) for r in rows]
+
+
 async def get_redemption_history() -> list[dict]:
     async with _conn() as conn:
         rows = await conn.fetch("""
