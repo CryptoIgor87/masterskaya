@@ -15,7 +15,7 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
         callback_data=SectionCallback(name="bonuses").pack()
     ))
     builder.row(InlineKeyboardButton(
-        text="\u2709\ufe0f Обратная связь",
+        text="\u2709\ufe0f Задать вопрос",
         callback_data=SectionCallback(name="feedback").pack()
     ))
     builder.row(InlineKeyboardButton(
