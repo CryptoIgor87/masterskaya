@@ -4,6 +4,13 @@
 {% block content %}
 <h2 class="mb-4"><i class="bi bi-people"></i> Клиенты</h2>
 
+{% if flash_msg %}
+<div class="alert alert-{{ flash_type }} alert-dismissible fade show mb-4" role="alert">
+    {{ flash_msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
 <div class="mb-3">
     <input type="text" id="tableSearch" class="form-control" placeholder="Поиск..." style="max-width: 300px;">
 </div>
@@ -15,27 +22,77 @@
             <tr>
                 <th>Telegram ID</th>
                 <th>Имя</th>
-                <th>Фамилия</th>
                 <th>Username</th>
-                <th>Язык</th>
                 <th>Телефон</th>
                 <th>Бонусов</th>
                 <th>Сообщений</th>
                 <th>Дата регистрации</th>
+                <th>Действия</th>
             </tr>
         </thead>
         <tbody>
             {% for client in clients %}
             <tr>
                 <td><code>{{ client.telegram_id }}</code></td>
-                <td>{{ client.first_name or '—' }}</td>
-                <td>{{ client.last_name or '—' }}</td>
+                <td>{{ client.first_name or '—' }} {{ client.last_name or '' }}</td>
                 <td>{% if client.username %}@{{ client.username }}{% else %}—{% endif %}</td>
-                <td>{{ client.language_code or '—' }}</td>
                 <td>{{ client.phone or '—' }}</td>
                 <td><span class="badge bg-primary">{{ client.bonus_total }}</span></td>
                 <td><span class="badge bg-secondary">{{ client.msg_count }}</span></td>
                 <td>{{ client.created_at|tomsk }}</td>
+                <td class="text-nowrap">
+                    <!-- Send message -->
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#msgModal{{ client.id }}" title="Отправить сообщение">
+                        <i class="bi bi-envelope"></i>
+                    </button>
+                    <!-- Delete -->
+                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delModal{{ client.id }}" title="Удалить">
+                        <i class="bi bi-trash"></i>
+                    </button>
+
+                    <!-- Message modal -->
+                    <div class="modal fade" id="msgModal{{ client.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form action="{{ B }}/admin/clients/{{ client.id }}/message" method="post">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Сообщение для {{ client.first_name or client.telegram_id }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <textarea name="message_text" class="form-control" rows="4" placeholder="Текст сообщения..." required></textarea>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                        <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Отправить</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete confirm modal -->
+                    <div class="modal fade" id="delModal{{ client.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Удалить клиента?</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Вы уверены, что хотите удалить клиента <b>{{ client.first_name or '' }} {{ client.last_name or '' }}</b>?
+                                    Все его бонусы и сообщения тоже будут удалены.
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                    <form action="{{ B }}/admin/clients/{{ client.id }}/delete" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Удалить</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

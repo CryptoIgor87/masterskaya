@@ -496,6 +496,11 @@ async def get_all_bonuses_with_clients() -> list[dict]:
         return [dict(r) for r in rows]
 
 
+async def delete_client(client_id: int):
+    async with _conn() as conn:
+        await conn.execute("DELETE FROM clients WHERE id = $1", client_id)
+
+
 # === Feedback ===
 
 async def save_feedback(client_id: int, message_text: str) -> int:
