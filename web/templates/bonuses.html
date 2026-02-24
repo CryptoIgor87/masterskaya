@@ -23,13 +23,13 @@
     <div class="col-auto">
         <div class="card text-center px-4 py-3">
             <div class="fs-3 fw-bold text-success">{{ stats.clients_claimed }}</div>
-            <small class="text-muted">Забрали бонусы</small>
+            <small class="text-muted">Активировали</small>
         </div>
     </div>
     <div class="col-auto">
         <div class="card text-center px-4 py-3">
             <div class="fs-3 fw-bold text-warning">{{ stats.clients_with_bonuses - stats.clients_claimed }}</div>
-            <small class="text-muted">Не забрали</small>
+            <small class="text-muted">Не активировали</small>
         </div>
     </div>
     <div class="col-auto">
@@ -206,10 +206,10 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
                 <td><code>{{ bonus.promo_code }}</code></td>
                 <td>
                     {% if bonus.is_claimed %}
-                    <span class="badge bg-success">Забрано</span>
+                    <span class="badge bg-success">Активировано</span>
                     <br><small class="text-muted">{{ bonus.claimed_at|tomsk }}</small>
                     {% else %}
-                    <span class="badge bg-warning text-dark">Не забрано</span>
+                    <span class="badge bg-warning text-dark">Не активировано</span>
                     {% endif %}
                 </td>
                 <td>{{ bonus.created_at|tomsk }}</td>
