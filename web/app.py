@@ -1,11 +1,16 @@
+import logging
+import traceback
 from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, APIRouter, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import PlainTextResponse
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
 import os
 from config import UPLOADS_DIR, BASE_PATH, SECRET_KEY, ADMIN_LOGIN, ADMIN_PASSWORD
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,6 +37,13 @@ templates.env.filters["tomsk"] = tomsk_time
 def create_app(bot=None) -> FastAPI:
     app = FastAPI(title="Masterksya Admin")
     app.state.bot = bot
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        tb = traceback.format_exception(type(exc), exc, exc.__traceback__)
+        tb_str = "".join(tb)
+        logger.error(f"Unhandled error on {request.method} {request.url}:\n{tb_str}")
+        return PlainTextResponse(f"Error: {exc}\n\n{tb_str}", status_code=500)
 
     app.mount(f"{BASE_PATH}/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
