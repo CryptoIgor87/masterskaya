@@ -38,13 +38,6 @@ def create_app(bot=None) -> FastAPI:
     app = FastAPI(title="Masterksya Admin")
     app.state.bot = bot
 
-    @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
-        tb = traceback.format_exception(type(exc), exc, exc.__traceback__)
-        tb_str = "".join(tb)
-        logger.error(f"Unhandled error on {request.method} {request.url}:\n{tb_str}")
-        return PlainTextResponse(f"Error: {exc}\n\n{tb_str}", status_code=500)
-
     app.mount(f"{BASE_PATH}/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
     os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -121,6 +114,20 @@ def create_app(bot=None) -> FastAPI:
             return RedirectResponse(login_url)
 
         return await call_next(request)
+
+    # --- Error-catching middleware ---
+
+    @app.middleware("http")
+    async def error_middleware(request: Request, call_next):
+        try:
+            return await call_next(request)
+        except Exception as exc:
+            tb = traceback.format_exception(type(exc), exc, exc.__traceback__)
+            tb_str = "".join(tb)
+            logger.error(f"ERROR on {request.method} {request.url}:\n{tb_str}")
+            return PlainTextResponse(
+                f"Error: {exc}\n\n{tb_str}", status_code=500,
+            )
 
     # --- Session middleware (outer — added last) ---
     app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
