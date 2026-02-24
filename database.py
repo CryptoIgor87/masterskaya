@@ -456,20 +456,38 @@ async def get_last_claimed_code(client_id: int) -> str | None:
 
 async def add_bonus(client_id: int, amount: int, promo_code: str):
     async with _conn() as conn:
-        await conn.execute(
-            "INSERT INTO bonuses (client_id, amount, promo_code) VALUES ($1, $2, $3)",
-            client_id, amount, promo_code,
+        existing = await conn.fetchrow(
+            "SELECT id FROM bonuses WHERE client_id = $1", client_id,
         )
+        if existing:
+            await conn.execute(
+                "UPDATE bonuses SET amount = amount + $1 WHERE id = $2",
+                amount, existing["id"],
+            )
+        else:
+            await conn.execute(
+                "INSERT INTO bonuses (client_id, amount, promo_code) VALUES ($1, $2, $3)",
+                client_id, amount, promo_code,
+            )
 
 
 async def add_bonus_to_all(amount: int, promo_code: str):
     async with _conn() as conn:
         rows = await conn.fetch("SELECT id FROM clients")
-        if rows:
-            await conn.executemany(
-                "INSERT INTO bonuses (client_id, amount, promo_code) VALUES ($1, $2, $3)",
-                [(r["id"], amount, promo_code) for r in rows],
+        for r in rows:
+            existing = await conn.fetchrow(
+                "SELECT id FROM bonuses WHERE client_id = $1", r["id"],
             )
+            if existing:
+                await conn.execute(
+                    "UPDATE bonuses SET amount = amount + $1 WHERE id = $2",
+                    amount, existing["id"],
+                )
+            else:
+                await conn.execute(
+                    "INSERT INTO bonuses (client_id, amount, promo_code) VALUES ($1, $2, $3)",
+                    r["id"], amount, promo_code,
+                )
 
 
 async def delete_bonus(bonus_id: int):
