@@ -1,7 +1,9 @@
 import os
 import time
+from datetime import date
 from fastapi import APIRouter, Request, UploadFile, File, Form
 from fastapi.responses import RedirectResponse
+from urllib.parse import quote
 from web.app import templates
 from config import UPLOADS_DIR, BASE_PATH
 import database as db
@@ -36,19 +38,28 @@ async def add_promotion(
     is_active: int = Form(0),
     photo: UploadFile = File(None),
 ):
-    photo_path = None
-    if photo and photo.filename:
-        ext = os.path.splitext(photo.filename)[1].lower()
-        if ext in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
-            filename = f"promo_{int(time.time())}{ext}"
-            filepath = os.path.join(UPLOADS_DIR, filename)
-            content = await photo.read()
-            with open(filepath, "wb") as f:
-                f.write(content)
-            photo_path = filename
+    try:
+        photo_path = None
+        if photo and photo.filename:
+            ext = os.path.splitext(photo.filename)[1].lower()
+            if ext in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+                filename = f"promo_{int(time.time())}{ext}"
+                filepath = os.path.join(UPLOADS_DIR, filename)
+                content = await photo.read()
+                with open(filepath, "wb") as f:
+                    f.write(content)
+                photo_path = filename
 
-    await db.add_promotion(title, description, photo_path, start_date, end_date, is_active)
-    return RedirectResponse(f"{BASE_PATH}/admin/promotions", status_code=303)
+        sd = date.fromisoformat(start_date)
+        ed = date.fromisoformat(end_date)
+        await db.add_promotion(title, description, photo_path, sd, ed, is_active)
+        return RedirectResponse(f"{BASE_PATH}/admin/promotions", status_code=303)
+    except Exception as e:
+        msg = quote(f"Ошибка при создании акции: {e}")
+        return RedirectResponse(
+            f"{BASE_PATH}/admin/promotions?msg={msg}&type=danger",
+            status_code=303,
+        )
 
 
 @router.post("/{promotion_id}/toggle")
