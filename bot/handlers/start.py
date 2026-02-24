@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from bot.keyboards.main_menu import main_menu_keyboard
@@ -12,8 +12,15 @@ DEFAULT_WELCOME = "Добро пожаловать в наш магазин! \U0
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
+async def cmd_start(message: Message, state: FSMContext, command: CommandObject):
     await state.clear()
+
+    # Handle giveaway deep links
+    if command.args and command.args.startswith("gw_"):
+        from bot.handlers.giveaways import handle_giveaway_entry
+        await handle_giveaway_entry(message, command.args)
+        return
+
     welcome = await db.get_setting("welcome_text") or DEFAULT_WELCOME
     await message.answer(
         f"{welcome}\n\nВыберите интересующий раздел:",

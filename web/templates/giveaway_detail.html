@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Розыгрыш: {{ gw.title }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ B }}/admin/giveaways">Розыгрыши</a></li>
+        <li class="breadcrumb-item active">{{ gw.title }}</li>
+    </ol>
+</nav>
+
+{% if flash_msg %}
+<div class="alert alert-{{ flash_type }} alert-dismissible fade show mb-4" role="alert">
+    {{ flash_msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Giveaway info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h3><i class="bi bi-trophy"></i> {{ gw.title }}</h3>
+                {% if gw.description %}
+                <p class="text-muted">{{ gw.description }}</p>
+                {% endif %}
+            </div>
+            <div>
+                {% if gw.status == 'active' %}
+                <span class="badge bg-success fs-6">Активен</span>
+                {% else %}
+                <span class="badge bg-secondary fs-6">Завершён</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row mt-3 g-3">
+            <div class="col-auto">
+                <div class="card text-center px-4 py-3">
+                    <div class="fs-3 fw-bold text-info">{{ participants|length }}</div>
+                    <small class="text-muted">Участников</small>
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="card text-center px-4 py-3">
+                    <div class="fs-3 fw-bold text-warning">{{ gw.winner_count }}</div>
+                    <small class="text-muted">Победителей (макс)</small>
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="card text-center px-4 py-3">
+                    <div class="fs-3 fw-bold text-primary">{{ gw.end_date|tomsk }}</div>
+                    <small class="text-muted">Дата окончания</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <label class="form-label fw-bold">Ссылка для поста:</label>
+            <div class="input-group" style="max-width: 500px;">
+                <input type="text" class="form-control" id="giveawayLink"
+                       value="https://t.me/{{ bot_username }}?start={{ gw.deep_link_code }}" readonly>
+                <button class="btn btn-outline-secondary" type="button" id="copyLinkBtn">
+                    <i class="bi bi-clipboard"></i> Копировать
+                </button>
+            </div>
+        </div>
+
+        {% if gw.status == 'active' %}
+        <div class="mt-3">
+            <form action="{{ B }}/admin/giveaways/{{ gw.id }}/finish" method="post" class="d-inline">
+                <button type="submit" class="btn btn-warning"
+                        onclick="return confirm('Завершить розыгрыш и выбрать победителей?')">
+                    <i class="bi bi-flag"></i> Завершить розыгрыш
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Winners -->
+{% if winners %}
+<h4 class="mb-3"><i class="bi bi-star-fill text-warning"></i> Победители</h4>
+<div class="table-responsive mb-4">
+    <table class="table table-hover align-middle">
+        <thead class="table-warning">
+            <tr>
+                <th>#</th>
+                <th>Имя</th>
+                <th>Username</th>
+                <th>Telegram ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for w in winners %}
+            <tr>
+                <td><span class="badge bg-warning text-dark">{{ loop.index }}</span></td>
+                <td>{{ w.first_name or '—' }} {{ w.last_name or '' }}</td>
+                <td>{% if w.username %}@{{ w.username }}{% else %}—{% endif %}</td>
+                <td><code>{{ w.telegram_id }}</code></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Participants -->
+<h4 class="mb-3"><i class="bi bi-people"></i> Участники ({{ participants|length }})</h4>
+{% if participants %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Имя</th>
+                <th>Username</th>
+                <th>Telegram ID</th>
+                <th>Дата участия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in participants %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ p.first_name or '—' }} {{ p.last_name or '' }}</td>
+                <td>{% if p.username %}@{{ p.username }}{% else %}—{% endif %}</td>
+                <td><code>{{ p.telegram_id }}</code></td>
+                <td>{{ p.created_at|tomsk }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">Участников пока нет.</div>
+{% endif %}
+
+<script>
+document.getElementById('copyLinkBtn').addEventListener('click', function() {
+    var input = document.getElementById('giveawayLink');
+    navigator.clipboard.writeText(input.value).then(function() {
+        var btn = document.getElementById('copyLinkBtn');
+        btn.innerHTML = '<i class="bi bi-check"></i> Скопировано';
+        setTimeout(function() {
+            btn.innerHTML = '<i class="bi bi-clipboard"></i> Копировать';
+        }, 2000);
+    });
+});
+</script>
+{% endblock %}

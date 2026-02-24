@@ -12,8 +12,10 @@ from aiogram.exceptions import TelegramBadRequest
 import uvicorn
 
 from config import BOT_TOKEN, WEB_HOST, WEB_PORT, UPLOADS_DIR
+import database as db
 from database import init_db, close_db
 from bot.handlers import start, promotions, bonuses, feedback
+from bot.handlers import giveaways as gw_handlers
 from bot.middlewares.register import RegisterMiddleware
 from web.app import create_app
 
@@ -58,13 +60,31 @@ async def main():
     dp.include_router(promotions.router)
     dp.include_router(bonuses.router)
     dp.include_router(feedback.router)
+    dp.include_router(gw_handlers.router)
 
     # Create web app
     app = create_app(bot)
 
+    # Store bot username for giveaway links
+    me = await bot.get_me()
+    app.state.bot_username = me.username
+    logger.info(f"Bot username: @{me.username}")
+
     # Run both concurrently
     config = uvicorn.Config(app, host=WEB_HOST, port=WEB_PORT, log_level="info")
     server = uvicorn.Server(config)
+
+    async def auto_finish_giveaways():
+        """Check every 60 seconds for expired giveaways and finish them."""
+        while True:
+            await asyncio.sleep(60)
+            try:
+                expired = await db.get_expired_active_giveaways()
+                for gw in expired:
+                    await db.finish_giveaway(gw["id"])
+                    logger.info(f"Auto-finished giveaway #{gw['id']}: {gw['title']}")
+            except Exception as e:
+                logger.error(f"Error in auto_finish_giveaways: {e}")
 
     logger.info(f"Starting bot polling + web admin at http://{WEB_HOST}:{WEB_PORT}")
 
@@ -72,6 +92,7 @@ async def main():
         await asyncio.gather(
             dp.start_polling(bot, drop_pending_updates=True),
             server.serve(),
+            auto_finish_giveaways(),
         )
     finally:
         await close_db()

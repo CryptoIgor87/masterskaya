@@ -1,5 +1,6 @@
 import asyncpg
 import random
+import string
 from contextlib import asynccontextmanager
 from config import DATABASE_URL, DB_SCHEMA, DEFAULT_BONUS_AMOUNT, DEFAULT_BONUS_PROMO
 
@@ -135,6 +136,36 @@ async def _create_tables(conn):
             is_replied      INTEGER DEFAULT 0,
             created_at      TIMESTAMP DEFAULT NOW(),
             replied_at      TIMESTAMP
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS giveaways (
+            id              SERIAL PRIMARY KEY,
+            title           TEXT NOT NULL,
+            description     TEXT,
+            winner_count    INTEGER NOT NULL DEFAULT 1,
+            end_date        TIMESTAMP NOT NULL,
+            deep_link_code  TEXT UNIQUE NOT NULL,
+            status          TEXT DEFAULT 'active',
+            created_at      TIMESTAMP DEFAULT NOW(),
+            finished_at     TIMESTAMP
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS giveaway_participants (
+            id              SERIAL PRIMARY KEY,
+            giveaway_id     INTEGER NOT NULL REFERENCES giveaways(id) ON DELETE CASCADE,
+            client_id       INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+            created_at      TIMESTAMP DEFAULT NOW(),
+            UNIQUE(giveaway_id, client_id)
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS giveaway_winners (
+            id              SERIAL PRIMARY KEY,
+            giveaway_id     INTEGER NOT NULL REFERENCES giveaways(id) ON DELETE CASCADE,
+            client_id       INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+            created_at      TIMESTAMP DEFAULT NOW()
         )
     """)
 
@@ -620,3 +651,143 @@ async def get_all_client_telegram_ids() -> list[int]:
     async with _conn() as conn:
         rows = await conn.fetch("SELECT telegram_id FROM clients")
         return [r["telegram_id"] for r in rows]
+
+
+# === Giveaways ===
+
+async def create_giveaway(title: str, description: str, winner_count: int, end_date) -> int:
+    async with _conn() as conn:
+        # Generate unique deep link code
+        for _ in range(100):
+            code = "gw_" + "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
+            existing = await conn.fetchrow(
+                "SELECT id FROM giveaways WHERE deep_link_code = $1", code,
+            )
+            if not existing:
+                break
+        row = await conn.fetchrow(
+            """INSERT INTO giveaways (title, description, winner_count, end_date, deep_link_code)
+               VALUES ($1, $2, $3, $4, $5) RETURNING id""",
+            title, description, winner_count, end_date, code,
+        )
+        return row["id"]
+
+
+async def get_giveaway(giveaway_id: int) -> dict | None:
+    async with _conn() as conn:
+        row = await conn.fetchrow("SELECT * FROM giveaways WHERE id = $1", giveaway_id)
+        return dict(row) if row else None
+
+
+async def get_giveaway_by_code(deep_link_code: str) -> dict | None:
+    async with _conn() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM giveaways WHERE deep_link_code = $1", deep_link_code,
+        )
+        return dict(row) if row else None
+
+
+async def get_all_giveaways() -> list[dict]:
+    async with _conn() as conn:
+        rows = await conn.fetch("""
+            SELECT g.*,
+                COALESCE((SELECT COUNT(*) FROM giveaway_participants p WHERE p.giveaway_id = g.id), 0) as participant_count,
+                COALESCE((SELECT COUNT(*) FROM giveaway_winners w WHERE w.giveaway_id = g.id), 0) as winner_count_actual
+            FROM giveaways g
+            ORDER BY g.created_at DESC
+        """)
+        return [dict(r) for r in rows]
+
+
+async def add_giveaway_participant(giveaway_id: int, client_id: int) -> bool:
+    """Add participant. Returns True if added, False if already exists."""
+    async with _conn() as conn:
+        existing = await conn.fetchrow(
+            "SELECT id FROM giveaway_participants WHERE giveaway_id = $1 AND client_id = $2",
+            giveaway_id, client_id,
+        )
+        if existing:
+            return False
+        await conn.execute(
+            "INSERT INTO giveaway_participants (giveaway_id, client_id) VALUES ($1, $2)",
+            giveaway_id, client_id,
+        )
+        return True
+
+
+async def get_giveaway_participants(giveaway_id: int) -> list[dict]:
+    async with _conn() as conn:
+        rows = await conn.fetch("""
+            SELECT p.created_at, c.first_name, c.last_name, c.username, c.telegram_id
+            FROM giveaway_participants p
+            JOIN clients c ON p.client_id = c.id
+            WHERE p.giveaway_id = $1
+            ORDER BY p.created_at
+        """, giveaway_id)
+        return [dict(r) for r in rows]
+
+
+async def finish_giveaway(giveaway_id: int) -> list[dict]:
+    """Finish giveaway: pick random winners, return winner list."""
+    async with _conn() as conn:
+        gw = await conn.fetchrow("SELECT * FROM giveaways WHERE id = $1", giveaway_id)
+        if not gw or gw["status"] != "active":
+            return []
+        # Get all participants
+        participants = await conn.fetch(
+            "SELECT client_id FROM giveaway_participants WHERE giveaway_id = $1",
+            giveaway_id,
+        )
+        if not participants:
+            await conn.execute(
+                "UPDATE giveaways SET status = 'finished', finished_at = NOW() WHERE id = $1",
+                giveaway_id,
+            )
+            return []
+        # Pick random winners
+        client_ids = [r["client_id"] for r in participants]
+        winner_count = min(gw["winner_count"], len(client_ids))
+        winner_ids = random.sample(client_ids, winner_count)
+        # Insert winners
+        for cid in winner_ids:
+            await conn.execute(
+                "INSERT INTO giveaway_winners (giveaway_id, client_id) VALUES ($1, $2)",
+                giveaway_id, cid,
+            )
+        # Mark finished
+        await conn.execute(
+            "UPDATE giveaways SET status = 'finished', finished_at = NOW() WHERE id = $1",
+            giveaway_id,
+        )
+        # Return winner info
+        winners = await conn.fetch("""
+            SELECT c.first_name, c.last_name, c.username, c.telegram_id
+            FROM giveaway_winners w
+            JOIN clients c ON w.client_id = c.id
+            WHERE w.giveaway_id = $1
+        """, giveaway_id)
+        return [dict(r) for r in winners]
+
+
+async def get_giveaway_winners(giveaway_id: int) -> list[dict]:
+    async with _conn() as conn:
+        rows = await conn.fetch("""
+            SELECT c.first_name, c.last_name, c.username, c.telegram_id, w.created_at
+            FROM giveaway_winners w
+            JOIN clients c ON w.client_id = c.id
+            WHERE w.giveaway_id = $1
+        """, giveaway_id)
+        return [dict(r) for r in rows]
+
+
+async def get_expired_active_giveaways() -> list[dict]:
+    async with _conn() as conn:
+        rows = await conn.fetch(
+            "SELECT * FROM giveaways WHERE status = 'active' AND end_date <= NOW()"
+        )
+        return [dict(r) for r in rows]
+
+
+async def delete_giveaway(giveaway_id: int):
+    async with _conn() as conn:
+        await conn.execute("DELETE FROM giveaways WHERE id = $1", giveaway_id)

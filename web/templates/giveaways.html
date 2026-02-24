@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Розыгрыши{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-trophy"></i> Розыгрыши</h2>
+
+{% if flash_msg %}
+<div class="alert alert-{{ flash_type }} alert-dismissible fade show mb-4" role="alert">
+    {{ flash_msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Create giveaway -->
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#createGiveaway">
+        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Создать розыгрыш</h5>
+        <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="collapse" id="createGiveaway">
+        <div class="card-body">
+            <form action="{{ B }}/admin/giveaways/create" method="post" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Название</label>
+                    <input type="text" name="title" class="form-control" placeholder="Новогодний розыгрыш" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Описание (необязательно)</label>
+                    <input type="text" name="description" class="form-control" placeholder="Разыгрываем подарки!">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Кол-во победителей</label>
+                    <input type="number" name="winner_count" class="form-control" min="1" value="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Дата окончания</label>
+                    <input type="datetime-local" name="end_date" class="form-control" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-lg"></i> Создать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Giveaways table -->
+{% if giveaways %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Название</th>
+                <th>Участников</th>
+                <th>Победителей</th>
+                <th>Дата окончания</th>
+                <th>Статус</th>
+                <th>Ссылка</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for gw in giveaways %}
+            <tr>
+                <td>
+                    <a href="{{ B }}/admin/giveaways/{{ gw.id }}" class="text-decoration-none fw-bold">
+                        {{ gw.title }}
+                    </a>
+                    {% if gw.description %}
+                    <br><small class="text-muted">{{ gw.description[:50] }}{% if gw.description|length > 50 %}...{% endif %}</small>
+                    {% endif %}
+                </td>
+                <td><span class="badge bg-info">{{ gw.participant_count }}</span></td>
+                <td>{{ gw.winner_count }} / <small class="text-muted">выбрано {{ gw.winner_count_actual }}</small></td>
+                <td>{{ gw.end_date|tomsk }}</td>
+                <td>
+                    {% if gw.status == 'active' %}
+                    <span class="badge bg-success">Активен</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Завершён</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-secondary copy-link-btn"
+                            data-link="https://t.me/{{ bot_username }}?start={{ gw.deep_link_code }}"
+                            title="Скопировать ссылку">
+                        <i class="bi bi-link-45deg"></i>
+                    </button>
+                </td>
+                <td class="text-nowrap">
+                    <a href="{{ B }}/admin/giveaways/{{ gw.id }}" class="btn btn-sm btn-outline-primary" title="Подробнее">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    {% if gw.status == 'active' %}
+                    <form action="{{ B }}/admin/giveaways/{{ gw.id }}/finish" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Завершить"
+                                onclick="return confirm('Завершить розыгрыш и выбрать победителей?')">
+                            <i class="bi bi-flag"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form action="{{ B }}/admin/giveaways/{{ gw.id }}/delete" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger btn-delete" title="Удалить">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="text-muted">Всего розыгрышей: {{ giveaways|length }}</p>
+{% else %}
+<div class="alert alert-info">Розыгрышей пока нет. Создайте первый!</div>
+{% endif %}
+
+<script>
+// Copy link to clipboard
+document.querySelectorAll('.copy-link-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var link = this.getAttribute('data-link');
+        navigator.clipboard.writeText(link).then(function() {
+            btn.innerHTML = '<i class="bi bi-check"></i>';
+            setTimeout(function() {
+                btn.innerHTML = '<i class="bi bi-link-45deg"></i>';
+            }, 2000);
+        });
+    });
+});
+// Rotate chevron on collapse toggle
+document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
+    var target = document.querySelector(el.getAttribute('data-bs-target'));
+    target.addEventListener('show.bs.collapse', function() {
+        el.querySelector('.bi-chevron-down').classList.replace('bi-chevron-down', 'bi-chevron-up');
+    });
+    target.addEventListener('hide.bs.collapse', function() {
+        el.querySelector('.bi-chevron-up').classList.replace('bi-chevron-up', 'bi-chevron-down');
+    });
+});
+</script>
+{% endblock %}

@@ -15,3 +15,8 @@ class FeedbackReplyCallback(CallbackData, prefix="fb_reply"):
 
 class NavigationCallback(CallbackData, prefix="nav"):
     action: str  # "back_to_menu"
+
+
+class GiveawayCaptchaCallback(CallbackData, prefix="gw_captcha"):
+    giveaway_id: int
+    answer: int
