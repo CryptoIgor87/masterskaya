@@ -19,7 +19,7 @@ WEB_HOST = os.environ.get("WEB_HOST", "0.0.0.0")
 WEB_PORT = int(os.environ.get("WEB_PORT", "8080"))
 BASE_PATH = os.environ.get("BASE_PATH", "")  # e.g. "/masterskaya" for production
 
-WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://example.com")
+WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://masterskaya.shop")
 
 DEFAULT_BONUS_AMOUNT = int(os.environ.get("DEFAULT_BONUS_AMOUNT", "100"))
 DEFAULT_BONUS_PROMO = os.environ.get("DEFAULT_BONUS_PROMO", "WELCOME")
