@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8608741974:AAEJpMGs5nn6FgM0W-_MOacDqag4VBxhErk")
-ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", "165288321"))
+ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", "1486060837"))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOADS_DIR = os.environ.get("UPLOADS_DIR", os.path.join(BASE_DIR, "uploads"))
