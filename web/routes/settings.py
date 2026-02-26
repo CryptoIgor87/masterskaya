@@ -12,6 +12,9 @@ router = APIRouter(prefix="/admin/settings", tags=["settings"])
 async def settings_page(request: Request):
     welcome_text = await db.get_setting("welcome_text") or ""
     bonus_terms = await db.get_setting("bonus_terms") or ""
+    default_enabled = await db.get_setting("default_bonus_enabled") == "1"
+    default_amount = await db.get_setting("default_bonus_amount") or "0"
+    clients = await db.get_all_clients()
     flash_msg = request.query_params.get("msg", "")
     flash_type = request.query_params.get("type", "info")
     return templates.TemplateResponse("settings.html", {
@@ -19,6 +22,9 @@ async def settings_page(request: Request):
         "active_page": "settings",
         "welcome_text": welcome_text,
         "bonus_terms": bonus_terms,
+        "default_enabled": default_enabled,
+        "default_amount": default_amount,
+        "clients": clients,
         "flash_msg": flash_msg,
         "flash_type": flash_type,
     })
