@@ -22,11 +22,17 @@ async def show_promotions(callback: CallbackQuery):
         return
 
     for promo in promotions:
-        caption = (
-            f"<b>{promo['title']}</b>\n\n"
-            f"{promo['description']}\n\n"
-            f"\U0001f4c5 Действует: {promo['start_date']} — {promo['end_date']}"
-        )
+        if promo.get("is_perpetual"):
+            caption = (
+                f"<b>{promo['title']}</b>\n\n"
+                f"{promo['description']}"
+            )
+        else:
+            caption = (
+                f"<b>{promo['title']}</b>\n\n"
+                f"{promo['description']}\n\n"
+                f"\U0001f4c5 Действует: {promo['start_date']} — {promo['end_date']}"
+            )
         if promo["photo_path"] and os.path.exists(os.path.join(UPLOADS_DIR, promo["photo_path"])):
             photo = FSInputFile(os.path.join(UPLOADS_DIR, promo["photo_path"]))
             await callback.message.answer_photo(photo=photo, caption=caption, parse_mode="HTML")

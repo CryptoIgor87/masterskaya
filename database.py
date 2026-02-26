@@ -51,6 +51,7 @@ async def init_db():
     )
     async with _conn() as conn:
         await _create_tables(conn)
+        await _run_migrations(conn)
         await _seed_defaults(conn)
 
 
@@ -81,9 +82,10 @@ async def _create_tables(conn):
             title           TEXT NOT NULL,
             description     TEXT NOT NULL,
             photo_path      TEXT,
-            start_date      DATE NOT NULL,
-            end_date        DATE NOT NULL,
+            start_date      DATE,
+            end_date        DATE,
             is_active       INTEGER DEFAULT 1,
+            is_perpetual    INTEGER DEFAULT 0,
             created_at      TIMESTAMP DEFAULT NOW()
         )
     """)
@@ -168,6 +170,22 @@ async def _create_tables(conn):
             created_at      TIMESTAMP DEFAULT NOW()
         )
     """)
+
+
+async def _run_migrations(conn):
+    # Add is_perpetual column to promotions if not exists
+    try:
+        await conn.execute(
+            "ALTER TABLE promotions ADD COLUMN is_perpetual INTEGER DEFAULT 0"
+        )
+    except Exception:
+        pass  # Column already exists
+    # Make start_date/end_date nullable for perpetual promotions
+    try:
+        await conn.execute("ALTER TABLE promotions ALTER COLUMN start_date DROP NOT NULL")
+        await conn.execute("ALTER TABLE promotions ALTER COLUMN end_date DROP NOT NULL")
+    except Exception:
+        pass
 
 
 async def _seed_defaults(conn):
@@ -263,7 +281,8 @@ async def get_active_promotions() -> list[dict]:
     async with _conn() as conn:
         rows = await conn.fetch(
             """SELECT * FROM promotions
-               WHERE is_active = 1 AND start_date <= CURRENT_DATE AND end_date >= CURRENT_DATE
+               WHERE is_active = 1
+                 AND (is_perpetual = 1 OR (start_date <= CURRENT_DATE AND end_date >= CURRENT_DATE))
                ORDER BY created_at DESC"""
         )
         return [dict(r) for r in rows]
@@ -275,15 +294,30 @@ async def get_all_promotions() -> list[dict]:
         return [dict(r) for r in rows]
 
 
-async def add_promotion(title: str, description: str, photo_path: str,
-                        start_date: str, end_date: str, is_active: int = 1) -> int:
+async def add_promotion(title: str, description: str, photo_path,
+                        start_date, end_date, is_active: int = 1,
+                        is_perpetual: int = 0) -> int:
     async with _conn() as conn:
         row = await conn.fetchrow(
-            """INSERT INTO promotions (title, description, photo_path, start_date, end_date, is_active)
-               VALUES ($1, $2, $3, $4, $5, $6) RETURNING id""",
-            title, description, photo_path, start_date, end_date, is_active,
+            """INSERT INTO promotions (title, description, photo_path, start_date, end_date, is_active, is_perpetual)
+               VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id""",
+            title, description, photo_path, start_date, end_date, is_active, is_perpetual,
         )
         return row["id"]
+
+
+async def update_promotion(promotion_id: int, title: str, description: str,
+                           photo_path, start_date, end_date,
+                           is_active: int = 1, is_perpetual: int = 0):
+    async with _conn() as conn:
+        await conn.execute(
+            """UPDATE promotions
+               SET title=$1, description=$2, photo_path=$3, start_date=$4,
+                   end_date=$5, is_active=$6, is_perpetual=$7
+               WHERE id=$8""",
+            title, description, photo_path, start_date, end_date,
+            is_active, is_perpetual, promotion_id,
+        )
 
 
 async def toggle_promotion(promotion_id: int):

@@ -25,6 +25,7 @@ MANAGER_BLOCKED = [
     r"^/admin/giveaways",
     r"^/admin/mailings",
     r"^/admin/promotions/add",
+    r"^/admin/promotions/\d+/edit",
     r"^/admin/promotions/\d+/toggle",
     r"^/admin/promotions/\d+/delete",
     r"^/admin/bonuses/assign",

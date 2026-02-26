@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Добавить акцию{% endblock %}
+{% block title %}{{ "Редактировать акцию" if promo else "Добавить акцию" }}{% endblock %}
 
 {% block content %}
 <div class="mb-4">
@@ -8,38 +8,52 @@
     </a>
 </div>
 
-<h2 class="mb-4">Добавить акцию</h2>
+<h2 class="mb-4">{{ "Редактировать акцию" if promo else "Добавить акцию" }}</h2>
 
 <div class="card p-4" style="max-width: 600px;">
-    <form action="{{ B }}/admin/promotions/add" method="post" enctype="multipart/form-data">
+    <form action="{{ B }}/admin/promotions/{{ promo.id ~ '/edit' if promo else 'add' }}" method="post" enctype="multipart/form-data">
         <div class="mb-3">
             <label class="form-label">Название *</label>
-            <input type="text" name="title" class="form-control" required>
+            <input type="text" name="title" class="form-control" value="{{ promo.title if promo else '' }}" required>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Описание *</label>
-            <textarea name="description" class="form-control" rows="4" required></textarea>
+            <textarea name="description" class="form-control" rows="4" required>{{ promo.description if promo else '' }}</textarea>
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Фото</label>
+            <label class="form-label">Фото{% if promo and promo.photo_path %} (загрузите новое для замены){% endif %}</label>
             <input type="file" name="photo" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp">
+            {% if promo and promo.photo_path %}
+            <div class="mt-2">
+                <img src="{{ B }}/uploads/{{ promo.photo_path }}" style="max-height: 100px;" alt="">
+            </div>
+            {% endif %}
         </div>
 
-        <div class="row mb-3">
+        <div class="mb-3 form-check">
+            <input type="checkbox" name="is_perpetual" value="1" class="form-check-input" id="isPerpetual"
+                   {% if promo and promo.is_perpetual %}checked{% endif %}>
+            <label class="form-check-label" for="isPerpetual">Бессрочная</label>
+        </div>
+
+        <div class="row mb-3" id="dateFields">
             <div class="col">
-                <label class="form-label">Дата начала *</label>
-                <input type="date" name="start_date" class="form-control" required>
+                <label class="form-label">Дата начала</label>
+                <input type="date" name="start_date" class="form-control" id="startDate"
+                       value="{{ promo.start_date if promo and promo.start_date else '' }}">
             </div>
             <div class="col">
-                <label class="form-label">Дата окончания *</label>
-                <input type="date" name="end_date" class="form-control" required>
+                <label class="form-label">Дата окончания</label>
+                <input type="date" name="end_date" class="form-control" id="endDate"
+                       value="{{ promo.end_date if promo and promo.end_date else '' }}">
             </div>
         </div>
 
         <div class="mb-3 form-check">
-            <input type="checkbox" name="is_active" value="1" class="form-check-input" id="isActive" checked>
+            <input type="checkbox" name="is_active" value="1" class="form-check-input" id="isActive"
+                   {% if not promo or promo.is_active %}checked{% endif %}>
             <label class="form-check-label" for="isActive">Действует</label>
         </div>
 
@@ -48,4 +62,26 @@
         </button>
     </form>
 </div>
+
+<script>
+var perpetualCb = document.getElementById('isPerpetual');
+var dateFields = document.getElementById('dateFields');
+var startDate = document.getElementById('startDate');
+var endDate = document.getElementById('endDate');
+
+function toggleDates() {
+    if (perpetualCb.checked) {
+        dateFields.style.display = 'none';
+        startDate.removeAttribute('required');
+        endDate.removeAttribute('required');
+    } else {
+        dateFields.style.display = '';
+        startDate.setAttribute('required', '');
+        endDate.setAttribute('required', '');
+    }
+}
+
+perpetualCb.addEventListener('change', toggleDates);
+toggleDates();
+</script>
 {% endblock %}
