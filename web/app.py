@@ -1,4 +1,5 @@
 import logging
+import re
 import traceback
 from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, APIRouter, Request
@@ -8,13 +9,30 @@ from fastapi.responses import PlainTextResponse
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
 import os
-from config import UPLOADS_DIR, BASE_PATH, SECRET_KEY, ADMIN_LOGIN, ADMIN_PASSWORD
+from config import (UPLOADS_DIR, BASE_PATH, SECRET_KEY,
+                    ADMIN_LOGIN, ADMIN_PASSWORD,
+                    MANAGER_LOGIN, MANAGER_PASSWORD)
 
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 TOMSK_TZ = timezone(timedelta(hours=7))
+
+# Paths blocked for manager role (regex patterns, applied after BASE_PATH prefix is stripped)
+MANAGER_BLOCKED = [
+    r"^/admin/settings",
+    r"^/admin/giveaways",
+    r"^/admin/mailings",
+    r"^/admin/promotions/add",
+    r"^/admin/promotions/\d+/toggle",
+    r"^/admin/promotions/\d+/delete",
+    r"^/admin/bonuses/assign",
+    r"^/admin/bonuses/\d+/delete",
+    r"^/admin/bonuses/\d+/update-code",
+    r"^/admin/bonuses/default-settings",
+    r"^/admin/clients/\d+/delete",
+]
 
 
 def tomsk_time(value):
@@ -35,7 +53,7 @@ templates.env.filters["tomsk"] = tomsk_time
 
 
 def create_app(bot=None) -> FastAPI:
-    app = FastAPI(title="Masterksya Admin")
+    app = FastAPI(title="Masterskaya Admin")
     app.state.bot = bot
 
     app.mount(f"{BASE_PATH}/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
@@ -58,6 +76,11 @@ def create_app(bot=None) -> FastAPI:
         password = form.get("password", "")
         if username == ADMIN_LOGIN and password == ADMIN_PASSWORD:
             request.session["authenticated"] = True
+            request.session["role"] = "admin"
+            return RedirectResponse(f"{BASE_PATH}/admin/promotions", status_code=303)
+        if username == MANAGER_LOGIN and password == MANAGER_PASSWORD:
+            request.session["authenticated"] = True
+            request.session["role"] = "manager"
             return RedirectResponse(f"{BASE_PATH}/admin/promotions", status_code=303)
         return templates.TemplateResponse("login.html", {
             "request": request,
@@ -112,6 +135,20 @@ def create_app(bot=None) -> FastAPI:
 
         if needs_auth and not request.session.get("authenticated"):
             return RedirectResponse(login_url)
+
+        # Store role in request state for templates
+        role = request.session.get("role", "admin")
+        request.state.role = role
+
+        # Block restricted paths for manager
+        if role == "manager" and needs_auth:
+            # Strip BASE_PATH prefix to match patterns
+            rel_path = path[len(BASE_PATH):] if BASE_PATH else path
+            for pattern in MANAGER_BLOCKED:
+                if re.match(pattern, rel_path):
+                    return RedirectResponse(
+                        f"{BASE_PATH}/admin/promotions", status_code=303,
+                    )
 
         return await call_next(request)
 

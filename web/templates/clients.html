@@ -2,6 +2,7 @@
 {% block title %}Клиенты{% endblock %}
 
 {% block content %}
+{% set role = request.state.role|default('admin') %}
 <h2 class="mb-4"><i class="bi bi-people"></i> Клиенты</h2>
 
 {% if flash_msg %}
@@ -45,10 +46,12 @@
                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#msgModal{{ client.id }}" title="Отправить сообщение">
                         <i class="bi bi-envelope"></i>
                     </button>
+                    {% if role == 'admin' %}
                     <!-- Delete -->
                     <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delModal{{ client.id }}" title="Удалить">
                         <i class="bi bi-trash"></i>
                     </button>
+                    {% endif %}
 
                     <!-- Message modal -->
                     <div class="modal fade" id="msgModal{{ client.id }}" tabindex="-1">
@@ -71,6 +74,7 @@
                         </div>
                     </div>
 
+                    {% if role == 'admin' %}
                     <!-- Delete confirm modal -->
                     <div class="modal fade" id="delModal{{ client.id }}" tabindex="-1">
                         <div class="modal-dialog">
@@ -92,6 +96,7 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

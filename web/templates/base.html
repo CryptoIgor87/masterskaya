@@ -10,12 +10,13 @@
 </head>
 <body>
     <nav class="navbar navbar-dark bg-dark px-3 d-flex justify-content-between">
-        <span class="navbar-brand mb-0 h1"><i class="bi bi-shop"></i> Masterskaya Bot</span>
+        <span class="navbar-brand mb-0 h1"><i class="bi bi-shop"></i> Masterskaya</span>
         <a href="{{ B }}/logout" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right"></i> Выход</a>
     </nav>
 
     <div class="d-flex">
         <div class="sidebar bg-light border-end p-3" style="min-width: 220px; min-height: calc(100vh - 56px);">
+            {% set role = request.state.role|default('admin') %}
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link {% if active_page == 'promotions' %}fw-bold text-primary{% endif %}" href="{{ B }}/admin/promotions">
@@ -32,6 +33,7 @@
                         <i class="bi bi-people"></i> Клиенты
                     </a>
                 </li>
+                {% if role == 'admin' %}
                 <li class="nav-item">
                     <a class="nav-link {% if active_page == 'mailings' %}fw-bold text-primary{% endif %}" href="{{ B }}/admin/mailings">
                         <i class="bi bi-megaphone"></i> Рассылки
@@ -42,16 +44,19 @@
                         <i class="bi bi-trophy"></i> Розыгрыши
                     </a>
                 </li>
+                {% endif %}
                 <li class="nav-item">
                     <a class="nav-link {% if active_page == 'feedback' %}fw-bold text-primary{% endif %}" href="{{ B }}/admin/feedback">
                         <i class="bi bi-chat-dots"></i> Задать вопрос
                     </a>
                 </li>
+                {% if role == 'admin' %}
                 <li class="nav-item">
                     <a class="nav-link {% if active_page == 'settings' %}fw-bold text-primary{% endif %}" href="{{ B }}/admin/settings">
                         <i class="bi bi-gear"></i> Настройки
                     </a>
                 </li>
+                {% endif %}
             </ul>
         </div>
 

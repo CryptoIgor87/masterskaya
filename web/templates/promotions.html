@@ -2,11 +2,14 @@
 {% block title %}Акции{% endblock %}
 
 {% block content %}
+{% set role = request.state.role|default('admin') %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-tag"></i> Акции</h2>
+    {% if role == 'admin' %}
     <a href="{{ B }}/admin/promotions/add" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Добавить акцию
     </a>
+    {% endif %}
 </div>
 
 {% if promotions %}
@@ -19,7 +22,7 @@
                 <th>Описание</th>
                 <th>Период</th>
                 <th>Статус</th>
-                <th>Действия</th>
+                {% if role == 'admin' %}<th>Действия</th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -42,6 +45,7 @@
                     <span class="badge bg-danger">Не действует</span>
                     {% endif %}
                 </td>
+                {% if role == 'admin' %}
                 <td>
                     <form action="{{ B }}/admin/promotions/{{ promo.id }}/toggle" method="post" class="d-inline">
                         <button type="submit" class="btn btn-sm btn-outline-secondary" title="Переключить статус">
@@ -54,12 +58,13 @@
                         </button>
                     </form>
                 </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 {% else %}
-<div class="alert alert-info">Акций пока нет. Добавьте первую!</div>
+<div class="alert alert-info">Акций пока нет.</div>
 {% endif %}
 {% endblock %}
