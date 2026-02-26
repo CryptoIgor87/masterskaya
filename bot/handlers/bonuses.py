@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from bot.callbacks.callback_data import SectionCallback, BonusCallback
-from bot.keyboards.main_menu import back_to_menu_keyboard
+from bot.keyboards.main_menu import back_to_menu_keyboard, bonuses_keyboard
 import database as db
 
 TOMSK_TZ = timezone(timedelta(hours=7))
@@ -56,9 +56,10 @@ async def show_bonuses(callback: CallbackQuery):
     await callback.message.answer(
         f"\U0001f381 У вас <b>{total}</b> бонусов!\n\n"
         f"Ваш уникальный промокод: <b>{promo_code}</b>\n\n"
-        f"Воспользоваться промокодом можно до <b>{expiry_str}</b>{history}",
+        f"Воспользоваться промокодом можно до <b>{expiry_str}</b>\n"
+        f"Назовите его на кассе в магазине либо свяжитесь с он-лайн менеджером.{history}",
         parse_mode="HTML",
-        reply_markup=back_to_menu_keyboard()
+        reply_markup=bonuses_keyboard()
     )
 
 

@@ -36,3 +36,16 @@ def back_to_menu_keyboard() -> InlineKeyboardMarkup:
         callback_data=NavigationCallback(action="back_to_menu").pack()
     ))
     return builder.as_markup()
+
+
+def bonuses_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text="\U0001f4ac Он-лайн менеджер",
+        callback_data=SectionCallback(name="feedback").pack()
+    ))
+    builder.row(InlineKeyboardButton(
+        text="\u25c0\ufe0f Назад в меню",
+        callback_data=NavigationCallback(action="back_to_menu").pack()
+    ))
+    return builder.as_markup()

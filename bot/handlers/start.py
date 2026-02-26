@@ -23,7 +23,7 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
 
     welcome = await db.get_setting("welcome_text") or DEFAULT_WELCOME
     await message.answer(
-        f"{welcome}\n\nВыберите интересующий раздел:",
+        f"{welcome}\n\nЗаберите ваши бонусы нажав кнопку ниже \u2b07\ufe0f",
         reply_markup=main_menu_keyboard()
     )
 
