@@ -374,7 +374,14 @@ async def get_client_claimed_bonus_total(client_id: int) -> int:
         return row["total"]
 
 
-async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
+async def update_client_phone(client_id: int, phone: str):
+    async with _conn() as conn:
+        await conn.execute(
+            "UPDATE clients SET phone = $1 WHERE id = $2", phone, client_id,
+        )
+
+
+async def redeem_bonus_by_code(promo_code: str, amount: int, phone: str = "") -> dict:
     """Find bonus by promo code and reduce its amount. Returns result dict."""
     async with _conn() as conn:
         row = await conn.fetchrow(
@@ -384,6 +391,7 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
         if not row:
             return {"found": False, "message": "Промокод не найден"}
         bonus_id = row["id"]
+        client_id = row["client_id"]
         current = row["amount"]
         deduct = min(amount, current)
         new_amount = current - deduct
@@ -391,6 +399,12 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
             "UPDATE bonuses SET amount = $1 WHERE id = $2",
             new_amount, bonus_id,
         )
+        # Update client phone if provided
+        if phone and phone.strip():
+            await conn.execute(
+                "UPDATE clients SET phone = $1 WHERE id = $2",
+                phone.strip(), client_id,
+            )
         # Log redemption history
         await conn.execute(
             "INSERT INTO bonus_redemptions (bonus_id, amount) VALUES ($1, $2)",
@@ -401,7 +415,7 @@ async def redeem_bonus_by_code(promo_code: str, amount: int) -> dict:
             "INSERT INTO settings (key, value) VALUES ('total_redeemed', $1) ON CONFLICT (key) DO UPDATE SET value = (COALESCE(settings.value::int, 0) + $1::int)::text",
             str(deduct),
         )
-        client = await conn.fetchrow("SELECT first_name, username FROM clients WHERE id = $1", row["client_id"])
+        client = await conn.fetchrow("SELECT first_name, username FROM clients WHERE id = $1", client_id)
         client_name = (client["first_name"] or "") if client else ""
         if client and client["username"]:
             client_name += f" (@{client['username']})"

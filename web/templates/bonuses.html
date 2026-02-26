@@ -59,12 +59,16 @@
                     <input type="number" name="amount" class="form-control" min="1" required style="width: 150px;">
                 </div>
                 <div class="col-auto">
+                    <label class="form-label">Телефон (необязательно)</label>
+                    <input type="tel" name="phone" class="form-control" placeholder="+7 999 123-45-67" style="width: 200px;">
+                </div>
+                <div class="col-auto">
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-dash-lg"></i> Списать
                     </button>
                 </div>
             </form>
-            <small class="text-muted mt-2 d-block">Введите промокод клиента, чтобы найти и списать бонусы</small>
+            <small class="text-muted mt-2 d-block">Введите промокод клиента, чтобы найти и списать бонусы. Если указать телефон — он сохранится в карточке клиента.</small>
         </div>
     </div>
 </div>
@@ -198,7 +202,6 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
                 <th>Клиент</th>
                 <th>Кол-во</th>
                 <th>Промокод</th>
-                <th>Статус</th>
                 <th>Дата создания</th>
                 {% if role == 'admin' %}<th>Действия</th>{% endif %}
             </tr>
@@ -212,14 +215,6 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
                 </td>
                 <td>{{ bonus.amount }}</td>
                 <td><code>{{ bonus.promo_code }}</code></td>
-                <td>
-                    {% if bonus.is_claimed %}
-                    <span class="badge bg-success">Активировано</span>
-                    <br><small class="text-muted">{{ bonus.claimed_at|tomsk }}</small>
-                    {% else %}
-                    <span class="badge bg-warning text-dark">Не активировано</span>
-                    {% endif %}
-                </td>
                 <td>{{ bonus.created_at|tomsk }}</td>
                 {% if role == 'admin' %}
                 <td>

@@ -22,6 +22,16 @@ async def list_clients(request: Request):
     })
 
 
+@router.post("/{client_id}/phone")
+async def update_phone(client_id: int, phone: str = Form(...)):
+    await db.update_client_phone(client_id, phone.strip())
+    msg = quote("Телефон обновлён")
+    return RedirectResponse(
+        f"{BASE_PATH}/admin/clients?msg={msg}&type=success",
+        status_code=303,
+    )
+
+
 @router.post("/{client_id}/delete")
 async def delete_client(client_id: int):
     await db.delete_client(client_id)
