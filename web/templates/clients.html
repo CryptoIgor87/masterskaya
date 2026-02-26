@@ -42,9 +42,9 @@
                 <td><span class="badge bg-secondary">{{ client.msg_count }}</span></td>
                 <td>{{ client.created_at|tomsk }}</td>
                 <td class="text-nowrap">
-                    <!-- Edit phone -->
-                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#phoneModal{{ client.id }}" title="Редактировать телефон">
-                        <i class="bi bi-telephone"></i>
+                    <!-- Settings -->
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#settingsModal{{ client.id }}" title="Настройки клиента">
+                        <i class="bi bi-gear"></i>
                     </button>
                     <!-- Send message -->
                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#msgModal{{ client.id }}" title="Отправить сообщение">
@@ -57,17 +57,24 @@
                     </button>
                     {% endif %}
 
-                    <!-- Phone modal -->
-                    <div class="modal fade" id="phoneModal{{ client.id }}" tabindex="-1">
+                    <!-- Settings modal -->
+                    <div class="modal fade" id="settingsModal{{ client.id }}" tabindex="-1">
                         <div class="modal-dialog">
                             <div class="modal-content">
-                                <form action="{{ B }}/admin/clients/{{ client.id }}/phone" method="post">
+                                <form action="{{ B }}/admin/clients/{{ client.id }}/update" method="post">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Телефон {{ client.first_name or client.telegram_id }}</h5>
+                                        <h5 class="modal-title">Настройки — {{ client.first_name or client.telegram_id }}</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <input type="tel" name="phone" class="form-control" value="{{ client.phone or '' }}" placeholder="+7 999 123-45-67" required>
+                                        <div class="mb-3">
+                                            <label class="form-label">Имя</label>
+                                            <input type="text" name="first_name" class="form-control" value="{{ client.first_name or '' }}" placeholder="Имя клиента">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Телефон</label>
+                                            <input type="tel" name="phone" class="form-control" value="{{ client.phone or '' }}" placeholder="+7 999 123-45-67">
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>

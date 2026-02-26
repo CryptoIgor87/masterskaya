@@ -83,9 +83,10 @@ async def redeem_bonus(
     request: Request,
     promo_code: str = Form(...),
     amount: int = Form(...),
+    client_name: str = Form(""),
     phone: str = Form(""),
 ):
-    result = await db.redeem_bonus_by_code(promo_code.strip(), amount, phone.strip())
+    result = await db.redeem_bonus_by_code(promo_code.strip(), amount, phone.strip(), client_name.strip())
     msg = quote(result["message"])
     if result["found"]:
         return RedirectResponse(

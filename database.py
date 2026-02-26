@@ -381,7 +381,15 @@ async def update_client_phone(client_id: int, phone: str):
         )
 
 
-async def redeem_bonus_by_code(promo_code: str, amount: int, phone: str = "") -> dict:
+async def update_client_info(client_id: int, first_name: str, phone: str):
+    async with _conn() as conn:
+        await conn.execute(
+            "UPDATE clients SET first_name = $1, phone = $2 WHERE id = $3",
+            first_name, phone, client_id,
+        )
+
+
+async def redeem_bonus_by_code(promo_code: str, amount: int, phone: str = "", client_name: str = "") -> dict:
     """Find bonus by promo code and reduce its amount. Returns result dict."""
     async with _conn() as conn:
         row = await conn.fetchrow(
@@ -399,11 +407,16 @@ async def redeem_bonus_by_code(promo_code: str, amount: int, phone: str = "") ->
             "UPDATE bonuses SET amount = $1 WHERE id = $2",
             new_amount, bonus_id,
         )
-        # Update client phone if provided
+        # Update client info if provided
         if phone and phone.strip():
             await conn.execute(
                 "UPDATE clients SET phone = $1 WHERE id = $2",
                 phone.strip(), client_id,
+            )
+        if client_name and client_name.strip():
+            await conn.execute(
+                "UPDATE clients SET first_name = $1 WHERE id = $2",
+                client_name.strip(), client_id,
             )
         # Log redemption history
         await conn.execute(
