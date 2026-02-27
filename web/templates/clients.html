@@ -12,13 +12,19 @@
 </div>
 {% endif %}
 
-<div class="mb-3">
-    <input type="text" id="tableSearch" class="form-control" placeholder="Поиск..." style="max-width: 300px;">
+<!-- Filters -->
+<div class="row mb-3 g-2">
+    <div class="col-auto">
+        <input type="text" id="filterName" class="form-control" placeholder="Поиск по имени..." style="width: 220px;">
+    </div>
+    <div class="col-auto">
+        <input type="text" id="filterPhone" class="form-control" placeholder="Поиск по телефону..." style="width: 220px;">
+    </div>
 </div>
 
 {% if clients %}
 <div class="table-responsive">
-    <table class="table table-hover align-middle filterable-table">
+    <table class="table table-hover align-middle" id="clientsTable">
         <thead class="table-light">
             <tr>
                 <th>Telegram ID</th>
@@ -26,20 +32,18 @@
                 <th>Username</th>
                 <th>Телефон</th>
                 <th>Бонусов</th>
-                <th>Сообщений</th>
                 <th>Дата регистрации</th>
                 <th>Действия</th>
             </tr>
         </thead>
         <tbody>
             {% for client in clients %}
-            <tr>
+            <tr data-name="{{ (client.first_name or '')|lower }} {{ (client.last_name or '')|lower }}" data-phone="{{ client.phone or '' }}">
                 <td><code>{{ client.telegram_id }}</code></td>
                 <td>{{ client.first_name or '—' }} {{ client.last_name or '' }}</td>
                 <td>{% if client.username %}@{{ client.username }}{% else %}—{% endif %}</td>
                 <td>{{ client.phone or '—' }}</td>
                 <td><span class="badge bg-primary">{{ client.bonus_total }}</span></td>
-                <td><span class="badge bg-secondary">{{ client.msg_count }}</span></td>
                 <td>{{ client.created_at|tomsk }}</td>
                 <td class="text-nowrap">
                     <!-- Settings -->
@@ -136,8 +140,72 @@
     </table>
 </div>
 
+<!-- Pagination -->
+<nav>
+    <ul class="pagination" id="pagination"></ul>
+</nav>
 <p class="text-muted">Всего клиентов: {{ clients|length }}</p>
+
 {% else %}
 <div class="alert alert-info">Клиентов пока нет. Они появятся после первого запуска бота.</div>
 {% endif %}
+
+<script>
+(function() {
+    var PER_PAGE = 15;
+    var currentPage = 1;
+    var rows = Array.from(document.querySelectorAll('#clientsTable tbody tr'));
+    var filtered = rows.slice();
+    var paginationEl = document.getElementById('pagination');
+    var nameInput = document.getElementById('filterName');
+    var phoneInput = document.getElementById('filterPhone');
+
+    function applyFilters() {
+        var nameQ = (nameInput.value || '').toLowerCase();
+        var phoneQ = (phoneInput.value || '').replace(/\D/g, '');
+        filtered = rows.filter(function(row) {
+            var name = row.getAttribute('data-name') || '';
+            var phone = (row.getAttribute('data-phone') || '').replace(/\D/g, '');
+            var nameOk = !nameQ || name.includes(nameQ);
+            var phoneOk = !phoneQ || phone.includes(phoneQ);
+            return nameOk && phoneOk;
+        });
+        currentPage = 1;
+        render();
+    }
+
+    function render() {
+        var totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+        if (currentPage > totalPages) currentPage = totalPages;
+        var start = (currentPage - 1) * PER_PAGE;
+        var end = start + PER_PAGE;
+        var visible = filtered.slice(start, end);
+
+        rows.forEach(function(r) { r.style.display = 'none'; });
+        visible.forEach(function(r) { r.style.display = ''; });
+
+        // Pagination
+        var html = '';
+        if (totalPages > 1) {
+            html += '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (currentPage - 1) + '">&laquo;</a></li>';
+            for (var i = 1; i <= totalPages; i++) {
+                html += '<li class="page-item ' + (i === currentPage ? 'active' : '') + '"><a class="page-link" href="#" data-p="' + i + '">' + i + '</a></li>';
+            }
+            html += '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (currentPage + 1) + '">&raquo;</a></li>';
+        }
+        paginationEl.innerHTML = html;
+    }
+
+    paginationEl.addEventListener('click', function(e) {
+        e.preventDefault();
+        var p = e.target.getAttribute('data-p');
+        if (p) { currentPage = parseInt(p); render(); }
+    });
+
+    nameInput.addEventListener('input', applyFilters);
+    phoneInput.addEventListener('input', applyFilters);
+
+    render();
+})();
+</script>
 {% endblock %}
