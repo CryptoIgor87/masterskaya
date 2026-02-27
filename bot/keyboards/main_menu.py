@@ -20,7 +20,7 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
     ))
     builder.row(InlineKeyboardButton(
         text="\u2709\ufe0f Задать вопрос",
-        callback_data=SectionCallback(name="feedback").pack()
+        url="https://t.me/MasterskayaOrders"
     ))
     builder.row(InlineKeyboardButton(
         text="\U0001f310 Сайт магазина",
@@ -42,7 +42,7 @@ def bonuses_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(
         text="\U0001f4ac Он-лайн менеджер",
-        callback_data=SectionCallback(name="feedback").pack()
+        url="https://t.me/MasterskayaOrders"
     ))
     builder.row(InlineKeyboardButton(
         text="\u25c0\ufe0f Назад в меню",
