@@ -607,7 +607,7 @@ async def update_bonus_code(bonus_id: int, new_code: str):
 async def get_all_bonuses_with_clients() -> list[dict]:
     async with _conn() as conn:
         rows = await conn.fetch("""
-            SELECT b.*, c.first_name, c.last_name, c.username, c.telegram_id
+            SELECT b.*, c.first_name, c.last_name, c.username, c.telegram_id, c.phone
             FROM bonuses b
             JOIN clients c ON b.client_id = c.id
             ORDER BY b.created_at DESC

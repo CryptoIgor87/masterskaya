@@ -72,9 +72,13 @@
         </div>
 
         <hr>
-        <p class="text-muted mb-2"><small>Кнопка со ссылкой (необязательно)</small></p>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="addButton"
+                {% if mailing and mailing.button_text %}checked{% endif %}>
+            <label class="form-check-label" for="addButton">Добавить кнопку со ссылкой</label>
+        </div>
 
-        <div class="row mb-3">
+        <div class="row mb-3" id="buttonFields" style="display: none;">
             <div class="col">
                 <label class="form-label">Текст кнопки</label>
                 <input type="text" name="button_text" class="form-control" placeholder="Перейти на сайт" value="{{ mailing.button_text if mailing and mailing.button_text else '' }}">
@@ -123,6 +127,22 @@
         cb.addEventListener('change', updateCount);
     });
     updateCount();
+
+    // Button toggle
+    var addBtn = document.getElementById('addButton');
+    var btnFields = document.getElementById('buttonFields');
+    var btnText = btnFields.querySelector('input[name="button_text"]');
+    var btnUrl = btnFields.querySelector('input[name="button_url"]');
+
+    function toggleButton() {
+        btnFields.style.display = addBtn.checked ? '' : 'none';
+        if (!addBtn.checked) {
+            btnText.value = '';
+            btnUrl.value = '';
+        }
+    }
+    addBtn.addEventListener('change', toggleButton);
+    toggleButton();
 })();
 </script>
 {% endblock %}

@@ -19,24 +19,26 @@ def generate_promo_code() -> str:
 @router.get("")
 async def list_bonuses(request: Request):
     bonuses = await db.get_all_bonuses_with_clients()
-    clients = await db.get_all_clients()
     stats = await db.get_bonus_stats()
-    redemptions = await db.get_redemption_history()
-    default_enabled = await db.get_setting("default_bonus_enabled") == "1"
-    default_amount = await db.get_setting("default_bonus_amount") or "0"
     flash_msg = request.query_params.get("msg", "")
     flash_type = request.query_params.get("type", "info")
     return templates.TemplateResponse("bonuses.html", {
         "request": request,
         "bonuses": bonuses,
-        "clients": clients,
         "stats": stats,
-        "redemptions": redemptions,
         "active_page": "bonuses",
-        "default_enabled": default_enabled,
-        "default_amount": default_amount,
         "flash_msg": flash_msg,
         "flash_type": flash_type,
+    })
+
+
+@router.get("/history")
+async def history_page(request: Request):
+    redemptions = await db.get_redemption_history()
+    return templates.TemplateResponse("bonuses_redeem.html", {
+        "request": request,
+        "redemptions": redemptions,
+        "active_page": "bonuses",
     })
 
 

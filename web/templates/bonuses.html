@@ -13,19 +13,20 @@
 </div>
 {% endif %}
 
-<!-- Stats -->
-<div class="row mb-4 g-3">
-    <div class="col-auto">
-        <div class="card text-center px-4 py-3">
-            <div class="fs-3 fw-bold text-info">{{ stats.clients_with_bonuses }}</div>
-            <small class="text-muted">Клиентов с бонусами</small>
-        </div>
+<!-- Stats + history button -->
+<div class="d-flex flex-wrap align-items-start gap-3 mb-4">
+    <div class="card text-center px-4 py-3">
+        <div class="fs-3 fw-bold text-info">{{ stats.clients_with_bonuses }}</div>
+        <small class="text-muted">Клиентов с бонусами</small>
     </div>
-    <div class="col-auto">
-        <div class="card text-center px-4 py-3">
-            <div class="fs-3 fw-bold text-danger">{{ stats.total_redeemed }}</div>
-            <small class="text-muted">Списано бонусов</small>
-        </div>
+    <div class="card text-center px-4 py-3">
+        <div class="fs-3 fw-bold text-danger">{{ stats.total_redeemed }}</div>
+        <small class="text-muted">Списано бонусов</small>
+    </div>
+    <div class="ms-auto">
+        <a href="{{ B }}/admin/bonuses/history" class="btn btn-outline-secondary">
+            <i class="bi bi-clock-history"></i> История списаний
+        </a>
     </div>
 </div>
 
@@ -80,10 +81,23 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
 });
 </script>
 
+<!-- Filters -->
+<div class="row mb-3 g-2">
+    <div class="col-auto">
+        <input type="text" id="filterName" class="form-control" placeholder="Поиск по имени..." style="width: 200px;">
+    </div>
+    <div class="col-auto">
+        <input type="text" id="filterPhone" class="form-control" placeholder="Поиск по телефону..." style="width: 200px;">
+    </div>
+    <div class="col-auto">
+        <input type="text" id="filterCode" class="form-control" placeholder="Поиск по промокоду..." style="width: 200px;">
+    </div>
+</div>
+
 <!-- Bonuses table -->
 {% if bonuses %}
 <div class="table-responsive">
-    <table class="table table-hover align-middle">
+    <table class="table table-hover align-middle" id="bonusesTable">
         <thead class="table-light">
             <tr>
                 <th>Клиент</th>
@@ -95,7 +109,7 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
         </thead>
         <tbody>
             {% for bonus in bonuses %}
-            <tr>
+            <tr data-name="{{ (bonus.first_name or '')|lower }} {{ (bonus.last_name or '')|lower }}" data-phone="{{ bonus.phone or '' }}" data-code="{{ (bonus.promo_code or '')|lower }}">
                 <td>
                     {{ bonus.first_name or '' }} {{ bonus.last_name or '' }}
                     {% if bonus.username %}<br><small class="text-muted">@{{ bonus.username }}</small>{% endif %}
@@ -143,39 +157,78 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
         </tbody>
     </table>
 </div>
+
+<!-- Pagination -->
+<nav>
+    <ul class="pagination" id="pagination"></ul>
+</nav>
+<p class="text-muted">Всего бонусов: {{ bonuses|length }}</p>
+
 {% else %}
 <div class="alert alert-info">Бонусов пока нет.</div>
 {% endif %}
 
-<!-- Redemption history -->
-<h4 class="mt-5 mb-3"><i class="bi bi-clock-history"></i> История списаний</h4>
-{% if redemptions %}
-<div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>Клиент</th>
-                <th>Промокод</th>
-                <th>Списано</th>
-                <th>Дата</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in redemptions %}
-            <tr>
-                <td>
-                    {{ r.first_name or '' }} {{ r.last_name or '' }}
-                    {% if r.username %}<br><small class="text-muted">@{{ r.username }}</small>{% endif %}
-                </td>
-                <td><code>{{ r.promo_code }}</code></td>
-                <td><span class="text-danger fw-bold">-{{ r.amount }}</span></td>
-                <td>{{ r.created_at|tomsk }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<div class="alert alert-secondary">Списаний пока не было.</div>
-{% endif %}
+<script>
+(function() {
+    var PER_PAGE = 15;
+    var currentPage = 1;
+    var rows = Array.from(document.querySelectorAll('#bonusesTable tbody tr'));
+    var filtered = rows.slice();
+    var paginationEl = document.getElementById('pagination');
+    var nameInput = document.getElementById('filterName');
+    var phoneInput = document.getElementById('filterPhone');
+    var codeInput = document.getElementById('filterCode');
+
+    function applyFilters() {
+        var nameQ = (nameInput.value || '').toLowerCase();
+        var phoneQ = (phoneInput.value || '').replace(/\D/g, '');
+        var codeQ = (codeInput.value || '').toLowerCase();
+        filtered = rows.filter(function(row) {
+            var name = row.getAttribute('data-name') || '';
+            var phone = (row.getAttribute('data-phone') || '').replace(/\D/g, '');
+            var code = row.getAttribute('data-code') || '';
+            var nameOk = !nameQ || name.includes(nameQ);
+            var phoneOk = !phoneQ || phone.includes(phoneQ);
+            var codeOk = !codeQ || code.includes(codeQ);
+            return nameOk && phoneOk && codeOk;
+        });
+        currentPage = 1;
+        render();
+    }
+
+    function render() {
+        var totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+        if (currentPage > totalPages) currentPage = totalPages;
+        var start = (currentPage - 1) * PER_PAGE;
+        var end = start + PER_PAGE;
+        var visible = filtered.slice(start, end);
+
+        rows.forEach(function(r) { r.style.display = 'none'; });
+        visible.forEach(function(r) { r.style.display = ''; });
+
+        // Pagination
+        var html = '';
+        if (totalPages > 1) {
+            html += '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (currentPage - 1) + '">&laquo;</a></li>';
+            for (var i = 1; i <= totalPages; i++) {
+                html += '<li class="page-item ' + (i === currentPage ? 'active' : '') + '"><a class="page-link" href="#" data-p="' + i + '">' + i + '</a></li>';
+            }
+            html += '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (currentPage + 1) + '">&raquo;</a></li>';
+        }
+        paginationEl.innerHTML = html;
+    }
+
+    paginationEl.addEventListener('click', function(e) {
+        e.preventDefault();
+        var p = e.target.getAttribute('data-p');
+        if (p) { currentPage = parseInt(p); render(); }
+    });
+
+    nameInput.addEventListener('input', applyFilters);
+    phoneInput.addEventListener('input', applyFilters);
+    codeInput.addEventListener('input', applyFilters);
+
+    render();
+})();
+</script>
 {% endblock %}
