@@ -10,8 +10,51 @@
 
 <h2 class="mb-4">{% if mailing %}Редактировать{% else %}Создать{% endif %} рассылку</h2>
 
-<div class="card p-4" style="max-width: 600px;">
+<div class="card p-4" style="max-width: 700px;">
     <form action="{{ B }}/admin/mailings/{% if mailing %}{{ mailing.id }}/edit{% else %}create{% endif %}" method="post" enctype="multipart/form-data">
+
+        <!-- Target filter -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Кому отправить</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="target" id="targetAll" value="all"
+                    {% if not mailing or (mailing and mailing.target|default('all') == 'all') %}checked{% endif %}>
+                <label class="form-check-label" for="targetAll">Всем клиентам</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="target" id="targetNoRedeem" value="no_redemptions"
+                    {% if mailing and mailing.target == 'no_redemptions' %}checked{% endif %}>
+                <label class="form-check-label" for="targetNoRedeem">Клиентам без списаний бонусов</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="target" id="targetSelected" value="selected"
+                    {% if mailing and mailing.target == 'selected' %}checked{% endif %}>
+                <label class="form-check-label" for="targetSelected">Выбранным клиентам</label>
+            </div>
+        </div>
+
+        <!-- Client selector (shown only when "selected") -->
+        <div class="mb-3" id="clientSelectorBlock" style="display: none;">
+            <label class="form-label">Выберите клиентов</label>
+            <input type="text" id="clientSearch" class="form-control mb-2" placeholder="Поиск по имени или username...">
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px;">
+                {% for client in clients %}
+                <div class="form-check client-item">
+                    <input class="form-check-input client-checkbox" type="checkbox" name="client_ids"
+                        value="{{ client.id }}" id="client_{{ client.id }}"
+                        {% if mailing and mailing.target == 'selected' and client.id|string in selected_ids %}checked{% endif %}>
+                    <label class="form-check-label" for="client_{{ client.id }}">
+                        {{ client.first_name or '' }} {{ client.last_name or '' }}
+                        {% if client.username %}<small class="text-muted">@{{ client.username }}</small>{% endif %}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            <small class="text-muted mt-1 d-block">Выбрано: <span id="selectedCount">0</span></small>
+        </div>
+
+        <hr>
+
         <div class="mb-3">
             <label class="form-label">Текст рассылки *</label>
             <textarea name="text" class="form-control" rows="5" required placeholder="Поддерживается HTML: &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;">{{ mailing.text if mailing else '' }}</textarea>
@@ -47,4 +90,39 @@
         </button>
     </form>
 </div>
+
+<script>
+(function() {
+    var radios = document.querySelectorAll('input[name="target"]');
+    var block = document.getElementById('clientSelectorBlock');
+    var search = document.getElementById('clientSearch');
+    var items = document.querySelectorAll('.client-item');
+    var countEl = document.getElementById('selectedCount');
+
+    function toggleBlock() {
+        var selected = document.querySelector('input[name="target"]:checked');
+        block.style.display = selected && selected.value === 'selected' ? 'block' : 'none';
+    }
+
+    function updateCount() {
+        countEl.textContent = document.querySelectorAll('.client-checkbox:checked').length;
+    }
+
+    radios.forEach(function(r) { r.addEventListener('change', toggleBlock); });
+    toggleBlock();
+
+    search.addEventListener('input', function() {
+        var q = this.value.toLowerCase();
+        items.forEach(function(item) {
+            var text = item.textContent.toLowerCase();
+            item.style.display = text.includes(q) ? '' : 'none';
+        });
+    });
+
+    document.querySelectorAll('.client-checkbox').forEach(function(cb) {
+        cb.addEventListener('change', updateCount);
+    });
+    updateCount();
+})();
+</script>
 {% endblock %}

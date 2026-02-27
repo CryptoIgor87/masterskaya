@@ -186,6 +186,15 @@ async def _run_migrations(conn):
         await conn.execute("ALTER TABLE promotions ALTER COLUMN end_date DROP NOT NULL")
     except Exception:
         pass
+    # Add target and client_ids columns to mailings
+    try:
+        await conn.execute("ALTER TABLE mailings ADD COLUMN target TEXT DEFAULT 'all'")
+    except Exception:
+        pass
+    try:
+        await conn.execute("ALTER TABLE mailings ADD COLUMN client_ids TEXT DEFAULT ''")
+    except Exception:
+        pass
 
 
 async def _seed_defaults(conn):
@@ -663,11 +672,12 @@ async def get_client(client_id: int) -> dict | None:
 # === Mailings ===
 
 async def create_mailing(text: str, photo_path: str = None,
-                         button_text: str = None, button_url: str = None) -> int:
+                         button_text: str = None, button_url: str = None,
+                         target: str = "all", client_ids: str = "") -> int:
     async with _conn() as conn:
         row = await conn.fetchrow(
-            "INSERT INTO mailings (text, photo_path, button_text, button_url) VALUES ($1, $2, $3, $4) RETURNING id",
-            text, photo_path, button_text, button_url,
+            "INSERT INTO mailings (text, photo_path, button_text, button_url, target, client_ids) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+            text, photo_path, button_text, button_url, target, client_ids,
         )
         return row["id"]
 
@@ -685,12 +695,14 @@ async def get_mailing(mailing_id: int) -> dict | None:
 
 
 async def update_mailing(mailing_id: int, text: str, photo_path: str = None,
-                         button_text: str = None, button_url: str = None):
+                         button_text: str = None, button_url: str = None,
+                         target: str = "all", client_ids: str = ""):
     async with _conn() as conn:
         await conn.execute(
-            """UPDATE mailings SET text=$1, photo_path=$2, button_text=$3, button_url=$4
-               WHERE id=$5 AND status='draft'""",
-            text, photo_path, button_text, button_url, mailing_id,
+            """UPDATE mailings SET text=$1, photo_path=$2, button_text=$3, button_url=$4,
+               target=$5, client_ids=$6
+               WHERE id=$7 AND status='draft'""",
+            text, photo_path, button_text, button_url, target, client_ids, mailing_id,
         )
 
 
@@ -711,6 +723,28 @@ async def delete_mailing(mailing_id: int):
 async def get_all_client_telegram_ids() -> list[int]:
     async with _conn() as conn:
         rows = await conn.fetch("SELECT telegram_id FROM clients")
+        return [r["telegram_id"] for r in rows]
+
+
+async def get_client_telegram_ids_no_redemptions() -> list[int]:
+    async with _conn() as conn:
+        rows = await conn.fetch("""
+            SELECT c.telegram_id FROM clients c
+            WHERE NOT EXISTS (
+                SELECT 1 FROM bonus_redemptions br
+                JOIN bonuses b ON b.id = br.bonus_id
+                WHERE b.client_id = c.id
+            )
+        """)
+        return [r["telegram_id"] for r in rows]
+
+
+async def get_client_telegram_ids_by_ids(client_ids: list[int]) -> list[int]:
+    async with _conn() as conn:
+        rows = await conn.fetch(
+            "SELECT telegram_id FROM clients WHERE id = ANY($1)",
+            client_ids,
+        )
         return [r["telegram_id"] for r in rows]
 
 

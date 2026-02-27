@@ -1,6 +1,7 @@
 import os
 import time
 import asyncio
+from typing import List
 from fastapi import APIRouter, Request, UploadFile, File, Form
 from fastapi.responses import RedirectResponse
 from config import UPLOADS_DIR, BASE_PATH
@@ -24,10 +25,13 @@ async def list_mailings(request: Request):
 
 @router.get("/create")
 async def create_form(request: Request):
+    clients = await db.get_all_clients()
     return templates.TemplateResponse("mailing_form.html", {
         "request": request,
         "active_page": "mailings",
         "mailing": None,
+        "clients": clients,
+        "selected_ids": [],
     })
 
 
@@ -36,6 +40,8 @@ async def create_mailing(
     text: str = Form(...),
     button_text: str = Form(""),
     button_url: str = Form(""),
+    target: str = Form("all"),
+    client_ids: List[str] = Form([]),
     photo: UploadFile = File(None),
 ):
     photo_path = None
@@ -49,11 +55,14 @@ async def create_mailing(
                 f.write(content)
             photo_path = filename
 
+    ids_str = ",".join(client_ids) if target == "selected" else ""
     await db.create_mailing(
         text=text,
         photo_path=photo_path,
         button_text=button_text.strip() or None,
         button_url=button_url.strip() or None,
+        target=target,
+        client_ids=ids_str,
     )
     return RedirectResponse(f"{BASE_PATH}/admin/mailings", status_code=303)
 
@@ -63,10 +72,15 @@ async def edit_form(mailing_id: int, request: Request):
     mailing = await db.get_mailing(mailing_id)
     if not mailing or mailing["status"] != "draft":
         return RedirectResponse(f"{BASE_PATH}/admin/mailings", status_code=303)
+    clients = await db.get_all_clients()
+    cids = mailing.get("client_ids") or ""
+    selected_ids = [s.strip() for s in cids.split(",") if s.strip()]
     return templates.TemplateResponse("mailing_form.html", {
         "request": request,
         "active_page": "mailings",
         "mailing": mailing,
+        "clients": clients,
+        "selected_ids": selected_ids,
     })
 
 
@@ -76,6 +90,8 @@ async def edit_mailing(
     text: str = Form(...),
     button_text: str = Form(""),
     button_url: str = Form(""),
+    target: str = Form("all"),
+    client_ids: List[str] = Form([]),
     photo: UploadFile = File(None),
 ):
     mailing = await db.get_mailing(mailing_id)
@@ -98,12 +114,15 @@ async def edit_mailing(
                 f.write(content)
             photo_path = filename
 
+    ids_str = ",".join(client_ids) if target == "selected" else ""
     await db.update_mailing(
         mailing_id,
         text=text,
         photo_path=photo_path,
         button_text=button_text.strip() or None,
         button_url=button_url.strip() or None,
+        target=target,
+        client_ids=ids_str,
     )
     return RedirectResponse(f"{BASE_PATH}/admin/mailings", status_code=303)
 
@@ -118,7 +137,15 @@ async def send_mailing(mailing_id: int, request: Request):
     if not bot:
         return RedirectResponse(f"{BASE_PATH}/admin/mailings", status_code=303)
 
-    telegram_ids = await db.get_all_client_telegram_ids()
+    target = mailing.get("target") or "all"
+    if target == "no_redemptions":
+        telegram_ids = await db.get_client_telegram_ids_no_redemptions()
+    elif target == "selected":
+        cids_str = mailing.get("client_ids") or ""
+        cids = [int(x) for x in cids_str.split(",") if x.strip()]
+        telegram_ids = await db.get_client_telegram_ids_by_ids(cids) if cids else []
+    else:
+        telegram_ids = await db.get_all_client_telegram_ids()
     sent_total = len(telegram_ids)
     sent_ok = 0
     sent_fail = 0

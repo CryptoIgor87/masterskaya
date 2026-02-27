@@ -49,11 +49,16 @@
             <a href="{{ B }}/admin/mailings/{{ m.id }}/edit" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-pencil"></i> Редактировать
             </a>
-            <form action="{{ B }}/admin/mailings/{{ m.id }}/send" method="post" class="d-inline" onsubmit="return confirm('Отправить рассылку всем клиентам?')">
+            <form action="{{ B }}/admin/mailings/{{ m.id }}/send" method="post" class="d-inline" onsubmit="return confirm('Отправить рассылку?')">
                 <button type="submit" class="btn btn-sm btn-success">
                     <i class="bi bi-send"></i> Отправить
                 </button>
             </form>
+            {% if m.target|default('all') == 'no_redemptions' %}
+            <span class="badge bg-info text-dark align-self-center">Без списаний</span>
+            {% elif m.target|default('all') == 'selected' %}
+            <span class="badge bg-info text-dark align-self-center">Выбранные клиенты</span>
+            {% endif %}
             {% endif %}
             <form action="{{ B }}/admin/mailings/{{ m.id }}/delete" method="post" class="d-inline">
                 <button type="submit" class="btn btn-sm btn-outline-danger btn-delete">
