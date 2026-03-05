@@ -23,8 +23,8 @@ async def list_clients(request: Request):
 
 
 @router.post("/{client_id}/update")
-async def update_client(client_id: int, first_name: str = Form(""), phone: str = Form("")):
-    await db.update_client_info(client_id, first_name.strip(), phone.strip())
+async def update_client(client_id: int, first_name: str = Form(""), last_name: str = Form(""), phone: str = Form("")):
+    await db.update_client_info(client_id, first_name.strip(), last_name.strip(), phone.strip())
     msg = quote("Данные клиента обновлены")
     return RedirectResponse(
         f"{BASE_PATH}/admin/clients?msg={msg}&type=success",

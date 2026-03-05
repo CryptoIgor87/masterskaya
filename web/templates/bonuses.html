@@ -48,8 +48,12 @@
                     <input type="number" name="amount" class="form-control" min="1" required style="width: 150px;">
                 </div>
                 <div class="col-auto">
-                    <label class="form-label">Имя клиента</label>
-                    <input type="text" name="client_name" class="form-control" placeholder="Имя" style="width: 180px;">
+                    <label class="form-label">Имя</label>
+                    <input type="text" name="client_name" class="form-control" placeholder="Имя" style="width: 150px;">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label">Фамилия</label>
+                    <input type="text" name="client_last_name" class="form-control" placeholder="Фамилия" style="width: 150px;">
                 </div>
                 <div class="col-auto">
                     <label class="form-label">Телефон</label>
@@ -61,7 +65,7 @@
                     </button>
                 </div>
             </form>
-            <small class="text-muted mt-2 d-block">Введите промокод клиента, чтобы найти и списать бонусы. Имя и телефон сохранятся в карточке клиента.</small>
+            <small class="text-muted mt-2 d-block">Введите промокод клиента, чтобы найти и списать бонусы. Имя, фамилия и телефон сохранятся в карточке клиента.</small>
         </div>
     </div>
 </div>
@@ -84,13 +88,16 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
 <!-- Filters -->
 <div class="row mb-3 g-2">
     <div class="col-auto">
-        <input type="text" id="filterName" class="form-control" placeholder="Поиск по имени..." style="width: 200px;">
+        <input type="text" id="filterName" class="form-control" placeholder="Поиск по имени..." style="width: 180px;">
     </div>
     <div class="col-auto">
-        <input type="text" id="filterPhone" class="form-control" placeholder="Поиск по телефону..." style="width: 200px;">
+        <input type="text" id="filterLastName" class="form-control" placeholder="Поиск по фамилии..." style="width: 180px;">
     </div>
     <div class="col-auto">
-        <input type="text" id="filterCode" class="form-control" placeholder="Поиск по промокоду..." style="width: 200px;">
+        <input type="text" id="filterPhone" class="form-control" placeholder="Поиск по телефону..." style="width: 180px;">
+    </div>
+    <div class="col-auto">
+        <input type="text" id="filterCode" class="form-control" placeholder="Поиск по промокоду..." style="width: 180px;">
     </div>
 </div>
 
@@ -100,7 +107,8 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
     <table class="table table-hover align-middle" id="bonusesTable">
         <thead class="table-light">
             <tr>
-                <th>Клиент</th>
+                <th>Имя</th>
+                <th>Фамилия</th>
                 <th>Кол-во</th>
                 <th>Промокод</th>
                 <th>Дата создания</th>
@@ -109,11 +117,12 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
         </thead>
         <tbody>
             {% for bonus in bonuses %}
-            <tr data-name="{{ (bonus.first_name or '')|lower }} {{ (bonus.last_name or '')|lower }}" data-phone="{{ bonus.phone or '' }}" data-code="{{ (bonus.promo_code or '')|lower }}">
+            <tr data-name="{{ (bonus.first_name or '')|lower }}" data-lastname="{{ (bonus.last_name or '')|lower }}" data-phone="{{ bonus.phone or '' }}" data-code="{{ (bonus.promo_code or '')|lower }}">
                 <td>
-                    {{ bonus.first_name or '' }} {{ bonus.last_name or '' }}
+                    {{ bonus.first_name or '—' }}
                     {% if bonus.username %}<br><small class="text-muted">@{{ bonus.username }}</small>{% endif %}
                 </td>
+                <td>{{ bonus.last_name or '—' }}</td>
                 <td>{{ bonus.amount }}</td>
                 <td><code>{{ bonus.promo_code }}</code></td>
                 <td>{{ bonus.created_at|tomsk }}</td>
@@ -176,24 +185,44 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
     var filtered = rows.slice();
     var paginationEl = document.getElementById('pagination');
     var nameInput = document.getElementById('filterName');
+    var lastNameInput = document.getElementById('filterLastName');
     var phoneInput = document.getElementById('filterPhone');
     var codeInput = document.getElementById('filterCode');
 
     function applyFilters() {
         var nameQ = (nameInput.value || '').toLowerCase();
+        var lastNameQ = (lastNameInput.value || '').toLowerCase();
         var phoneQ = (phoneInput.value || '').replace(/\D/g, '');
         var codeQ = (codeInput.value || '').toLowerCase();
         filtered = rows.filter(function(row) {
             var name = row.getAttribute('data-name') || '';
+            var lastName = row.getAttribute('data-lastname') || '';
             var phone = (row.getAttribute('data-phone') || '').replace(/\D/g, '');
             var code = row.getAttribute('data-code') || '';
             var nameOk = !nameQ || name.includes(nameQ);
+            var lastNameOk = !lastNameQ || lastName.includes(lastNameQ);
             var phoneOk = !phoneQ || phone.includes(phoneQ);
             var codeOk = !codeQ || code.includes(codeQ);
-            return nameOk && phoneOk && codeOk;
+            return nameOk && lastNameOk && phoneOk && codeOk;
         });
         currentPage = 1;
         render();
+    }
+
+    function getPages(current, total) {
+        var pages = [];
+        if (total <= 7) {
+            for (var i = 1; i <= total; i++) pages.push(i);
+            return pages;
+        }
+        pages.push(1);
+        if (current > 3) pages.push('...');
+        var start = Math.max(2, current - 1);
+        var end = Math.min(total - 1, current + 1);
+        for (var i = start; i <= end; i++) pages.push(i);
+        if (current < total - 2) pages.push('...');
+        pages.push(total);
+        return pages;
     }
 
     function render() {
@@ -206,12 +235,17 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
         rows.forEach(function(r) { r.style.display = 'none'; });
         visible.forEach(function(r) { r.style.display = ''; });
 
-        // Pagination
         var html = '';
         if (totalPages > 1) {
             html += '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (currentPage - 1) + '">&laquo;</a></li>';
-            for (var i = 1; i <= totalPages; i++) {
-                html += '<li class="page-item ' + (i === currentPage ? 'active' : '') + '"><a class="page-link" href="#" data-p="' + i + '">' + i + '</a></li>';
+            var pages = getPages(currentPage, totalPages);
+            for (var i = 0; i < pages.length; i++) {
+                var p = pages[i];
+                if (p === '...') {
+                    html += '<li class="page-item disabled"><span class="page-link">&hellip;</span></li>';
+                } else {
+                    html += '<li class="page-item ' + (p === currentPage ? 'active' : '') + '"><a class="page-link" href="#" data-p="' + p + '">' + p + '</a></li>';
+                }
             }
             html += '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (currentPage + 1) + '">&raquo;</a></li>';
         }
@@ -225,6 +259,7 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
     });
 
     nameInput.addEventListener('input', applyFilters);
+    lastNameInput.addEventListener('input', applyFilters);
     phoneInput.addEventListener('input', applyFilters);
     codeInput.addEventListener('input', applyFilters);
 

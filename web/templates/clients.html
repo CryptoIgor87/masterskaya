@@ -15,10 +15,13 @@
 <!-- Filters -->
 <div class="row mb-3 g-2">
     <div class="col-auto">
-        <input type="text" id="filterName" class="form-control" placeholder="Поиск по имени..." style="width: 220px;">
+        <input type="text" id="filterName" class="form-control" placeholder="Поиск по имени..." style="width: 200px;">
     </div>
     <div class="col-auto">
-        <input type="text" id="filterPhone" class="form-control" placeholder="Поиск по телефону..." style="width: 220px;">
+        <input type="text" id="filterLastName" class="form-control" placeholder="Поиск по фамилии..." style="width: 200px;">
+    </div>
+    <div class="col-auto">
+        <input type="text" id="filterPhone" class="form-control" placeholder="Поиск по телефону..." style="width: 200px;">
     </div>
 </div>
 
@@ -29,6 +32,7 @@
             <tr>
                 <th>Telegram ID</th>
                 <th>Имя</th>
+                <th>Фамилия</th>
                 <th>Username</th>
                 <th>Телефон</th>
                 <th>Бонусов</th>
@@ -38,9 +42,10 @@
         </thead>
         <tbody>
             {% for client in clients %}
-            <tr data-name="{{ (client.first_name or '')|lower }} {{ (client.last_name or '')|lower }}" data-phone="{{ client.phone or '' }}">
+            <tr data-name="{{ (client.first_name or '')|lower }}" data-lastname="{{ (client.last_name or '')|lower }}" data-phone="{{ client.phone or '' }}">
                 <td><code>{{ client.telegram_id }}</code></td>
-                <td>{{ client.first_name or '—' }} {{ client.last_name or '' }}</td>
+                <td>{{ client.first_name or '—' }}</td>
+                <td>{{ client.last_name or '—' }}</td>
                 <td>{% if client.username %}@{{ client.username }}{% else %}—{% endif %}</td>
                 <td>{{ client.phone or '—' }}</td>
                 <td><span class="badge bg-primary">{{ client.bonus_total }}</span></td>
@@ -74,6 +79,10 @@
                                         <div class="mb-3">
                                             <label class="form-label">Имя</label>
                                             <input type="text" name="first_name" class="form-control" value="{{ client.first_name or '' }}" placeholder="Имя клиента">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Фамилия</label>
+                                            <input type="text" name="last_name" class="form-control" value="{{ client.last_name or '' }}" placeholder="Фамилия клиента">
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label">Телефон</label>
@@ -158,20 +167,40 @@
     var filtered = rows.slice();
     var paginationEl = document.getElementById('pagination');
     var nameInput = document.getElementById('filterName');
+    var lastNameInput = document.getElementById('filterLastName');
     var phoneInput = document.getElementById('filterPhone');
 
     function applyFilters() {
         var nameQ = (nameInput.value || '').toLowerCase();
+        var lastNameQ = (lastNameInput.value || '').toLowerCase();
         var phoneQ = (phoneInput.value || '').replace(/\D/g, '');
         filtered = rows.filter(function(row) {
             var name = row.getAttribute('data-name') || '';
+            var lastName = row.getAttribute('data-lastname') || '';
             var phone = (row.getAttribute('data-phone') || '').replace(/\D/g, '');
             var nameOk = !nameQ || name.includes(nameQ);
+            var lastNameOk = !lastNameQ || lastName.includes(lastNameQ);
             var phoneOk = !phoneQ || phone.includes(phoneQ);
-            return nameOk && phoneOk;
+            return nameOk && lastNameOk && phoneOk;
         });
         currentPage = 1;
         render();
+    }
+
+    function getPages(current, total) {
+        var pages = [];
+        if (total <= 7) {
+            for (var i = 1; i <= total; i++) pages.push(i);
+            return pages;
+        }
+        pages.push(1);
+        if (current > 3) pages.push('...');
+        var start = Math.max(2, current - 1);
+        var end = Math.min(total - 1, current + 1);
+        for (var i = start; i <= end; i++) pages.push(i);
+        if (current < total - 2) pages.push('...');
+        pages.push(total);
+        return pages;
     }
 
     function render() {
@@ -184,12 +213,17 @@
         rows.forEach(function(r) { r.style.display = 'none'; });
         visible.forEach(function(r) { r.style.display = ''; });
 
-        // Pagination
         var html = '';
         if (totalPages > 1) {
             html += '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (currentPage - 1) + '">&laquo;</a></li>';
-            for (var i = 1; i <= totalPages; i++) {
-                html += '<li class="page-item ' + (i === currentPage ? 'active' : '') + '"><a class="page-link" href="#" data-p="' + i + '">' + i + '</a></li>';
+            var pages = getPages(currentPage, totalPages);
+            for (var i = 0; i < pages.length; i++) {
+                var p = pages[i];
+                if (p === '...') {
+                    html += '<li class="page-item disabled"><span class="page-link">&hellip;</span></li>';
+                } else {
+                    html += '<li class="page-item ' + (p === currentPage ? 'active' : '') + '"><a class="page-link" href="#" data-p="' + p + '">' + p + '</a></li>';
+                }
             }
             html += '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-p="' + (currentPage + 1) + '">&raquo;</a></li>';
         }
@@ -203,6 +237,7 @@
     });
 
     nameInput.addEventListener('input', applyFilters);
+    lastNameInput.addEventListener('input', applyFilters);
     phoneInput.addEventListener('input', applyFilters);
 
     render();
