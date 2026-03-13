@@ -24,6 +24,10 @@
                     <label class="form-label">Количество</label>
                     <input type="number" name="default_amount" class="form-control" min="0" value="{{ default_amount }}" required style="width: 120px;">
                 </div>
+                <div class="col-auto">
+                    <label class="form-label">Срок действия (дней)</label>
+                    <input type="number" name="bonus_expiry_days" class="form-control" min="1" value="{{ bonus_expiry_days }}" required style="width: 120px;">
+                </div>
                 <div class="col-auto pt-2">
                     <div class="form-check form-switch">
                         <input type="checkbox" name="default_enabled" value="1" class="form-check-input" id="defaultEnabled" {% if default_enabled %}checked{% endif %}>
@@ -36,7 +40,7 @@
                     </button>
                 </div>
             </form>
-            <small class="text-muted mt-2 d-block">Каждый новый клиент автоматически получит бонусы с уникальным промокодом при первом запуске бота</small>
+            <small class="text-muted mt-2 d-block">Каждый новый клиент автоматически получит бонусы с уникальным промокодом при первом запуске бота. Срок действия — количество дней после регистрации клиента.</small>
         </div>
     </div>
 </div>

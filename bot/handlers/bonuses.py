@@ -47,10 +47,12 @@ async def show_bonuses(callback: CallbackQuery):
         )
         return
 
+    expiry_days_str = await db.get_setting("bonus_expiry_days")
+    expiry_days = int(expiry_days_str) if expiry_days_str else 14
     created = client["created_at"]
     if created.tzinfo is None:
         created = created.replace(tzinfo=timezone.utc)
-    expiry = created.astimezone(TOMSK_TZ) + timedelta(days=14)
+    expiry = created.astimezone(TOMSK_TZ) + timedelta(days=expiry_days)
     expiry_str = expiry.strftime("%d.%m.%Y")
 
     redemptions = await db.get_client_redemptions(client["id"])

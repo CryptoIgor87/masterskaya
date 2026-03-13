@@ -14,6 +14,7 @@ async def settings_page(request: Request):
     bonus_terms = await db.get_setting("bonus_terms") or ""
     default_enabled = await db.get_setting("default_bonus_enabled") == "1"
     default_amount = await db.get_setting("default_bonus_amount") or "0"
+    bonus_expiry_days = await db.get_setting("bonus_expiry_days") or "14"
     clients = await db.get_all_clients()
     flash_msg = request.query_params.get("msg", "")
     flash_type = request.query_params.get("type", "info")
@@ -24,6 +25,7 @@ async def settings_page(request: Request):
         "bonus_terms": bonus_terms,
         "default_enabled": default_enabled,
         "default_amount": default_amount,
+        "bonus_expiry_days": bonus_expiry_days,
         "clients": clients,
         "flash_msg": flash_msg,
         "flash_type": flash_type,

@@ -106,7 +106,9 @@ async def redeem_bonus(
 async def update_default_settings(
     default_amount: int = Form(...),
     default_enabled: int = Form(0),
+    bonus_expiry_days: int = Form(14),
 ):
     await db.set_setting("default_bonus_amount", str(default_amount))
     await db.set_setting("default_bonus_enabled", str(default_enabled))
-    return RedirectResponse(f"{BASE_PATH}/admin/bonuses", status_code=303)
+    await db.set_setting("bonus_expiry_days", str(bonus_expiry_days))
+    return RedirectResponse(f"{BASE_PATH}/admin/settings", status_code=303)
