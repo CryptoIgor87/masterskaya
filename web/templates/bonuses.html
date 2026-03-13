@@ -139,17 +139,24 @@ document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
                         </button>
                     </form>
 
-                    <!-- Modal for code change -->
+                    <!-- Modal for editing bonus -->
                     <div class="modal fade" id="codeModal{{ bonus.id }}" tabindex="-1">
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <form action="{{ B }}/admin/bonuses/{{ bonus.id }}/update-code" method="post">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Изменить промокод</h5>
+                                        <h5 class="modal-title">Редактировать бонус</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <input type="text" name="promo_code" class="form-control" value="{{ bonus.promo_code }}" required>
+                                        <div class="mb-3">
+                                            <label class="form-label">Промокод</label>
+                                            <input type="text" name="promo_code" class="form-control" value="{{ bonus.promo_code }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Дата выдачи</label>
+                                            <input type="date" name="created_at" class="form-control" value="{{ bonus.created_at.strftime('%Y-%m-%d') if bonus.created_at else '' }}">
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>

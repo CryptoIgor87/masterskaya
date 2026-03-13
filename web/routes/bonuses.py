@@ -75,8 +75,13 @@ async def delete_bonus(bonus_id: int):
 async def update_code(
     bonus_id: int,
     promo_code: str = Form(...),
+    created_at: str = Form(""),
 ):
-    await db.update_bonus_code(bonus_id, promo_code)
+    from datetime import datetime
+    ca = None
+    if created_at.strip():
+        ca = datetime.strptime(created_at.strip(), "%Y-%m-%d")
+    await db.update_bonus_code(bonus_id, promo_code, ca)
     return RedirectResponse(f"{BASE_PATH}/admin/bonuses", status_code=303)
 
 

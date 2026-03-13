@@ -607,12 +607,18 @@ async def delete_bonus(bonus_id: int):
         await conn.execute("DELETE FROM bonuses WHERE id = $1", bonus_id)
 
 
-async def update_bonus_code(bonus_id: int, new_code: str):
+async def update_bonus_code(bonus_id: int, new_code: str, created_at=None):
     async with _conn() as conn:
-        await conn.execute(
-            "UPDATE bonuses SET promo_code = $1 WHERE id = $2",
-            new_code, bonus_id,
-        )
+        if created_at:
+            await conn.execute(
+                "UPDATE bonuses SET promo_code = $1, created_at = $2 WHERE id = $3",
+                new_code, created_at, bonus_id,
+            )
+        else:
+            await conn.execute(
+                "UPDATE bonuses SET promo_code = $1 WHERE id = $2",
+                new_code, bonus_id,
+            )
 
 
 async def get_all_bonuses_with_clients() -> list[dict]:
