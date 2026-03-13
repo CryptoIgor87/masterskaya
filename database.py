@@ -390,12 +390,18 @@ async def update_client_phone(client_id: int, phone: str):
         )
 
 
-async def update_client_info(client_id: int, first_name: str, last_name: str, phone: str):
+async def update_client_info(client_id: int, first_name: str, last_name: str, phone: str, created_at=None):
     async with _conn() as conn:
-        await conn.execute(
-            "UPDATE clients SET first_name = $1, last_name = $2, phone = $3 WHERE id = $4",
-            first_name, last_name, phone, client_id,
-        )
+        if created_at:
+            await conn.execute(
+                "UPDATE clients SET first_name = $1, last_name = $2, phone = $3, created_at = $4 WHERE id = $5",
+                first_name, last_name, phone, created_at, client_id,
+            )
+        else:
+            await conn.execute(
+                "UPDATE clients SET first_name = $1, last_name = $2, phone = $3 WHERE id = $4",
+                first_name, last_name, phone, client_id,
+            )
 
 
 async def redeem_bonus_by_code(promo_code: str, amount: int, phone: str = "", client_name: str = "", client_last_name: str = "") -> dict:

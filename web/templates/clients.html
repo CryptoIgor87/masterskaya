@@ -88,6 +88,10 @@
                                             <label class="form-label">Телефон</label>
                                             <input type="tel" name="phone" class="form-control phone-mask" value="{{ client.phone or '' }}" placeholder="+7 ___ ___ __ __">
                                         </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Дата регистрации</label>
+                                            <input type="date" name="created_at" class="form-control" value="{{ client.created_at.strftime('%Y-%m-%d') if client.created_at else '' }}">
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>

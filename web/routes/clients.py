@@ -1,3 +1,4 @@
+from datetime import datetime
 from urllib.parse import quote
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
@@ -23,8 +24,11 @@ async def list_clients(request: Request):
 
 
 @router.post("/{client_id}/update")
-async def update_client(client_id: int, first_name: str = Form(""), last_name: str = Form(""), phone: str = Form("")):
-    await db.update_client_info(client_id, first_name.strip(), last_name.strip(), phone.strip())
+async def update_client(client_id: int, first_name: str = Form(""), last_name: str = Form(""), phone: str = Form(""), created_at: str = Form("")):
+    ca = None
+    if created_at.strip():
+        ca = datetime.strptime(created_at.strip(), "%Y-%m-%d")
+    await db.update_client_info(client_id, first_name.strip(), last_name.strip(), phone.strip(), ca)
     msg = quote("Данные клиента обновлены")
     return RedirectResponse(
         f"{BASE_PATH}/admin/clients?msg={msg}&type=success",
